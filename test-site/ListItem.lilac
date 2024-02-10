@@ -1,0 +1,11 @@
+<script>
+    const b = state(false);
+</script>
+
+<li>
+    <input type="checkbox" bind={b}/> 
+    <span style={$b ? "text-decoration: line-through;" : ""}>
+	{props.name}
+	<button onclick={props.delete}>delete</button>
+    </span>
+</li>

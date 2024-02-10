@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<script>let global = {};
+let __internal_global = {};
+
+let ID_COUNTER = 0;
+
+const state = (initialState) => {
+    const stackTraceError = new Error();
+    const callStack = stackTraceError.stack.split('\n').slice(2);
+
+    console.log('Calling stack:', callStack);
+
+
+    const state = {
+	__STATE: true,
+	value: initialState,
+	subscriptions: new Map(),
+    };
+
+    const setState = (setter) => {
+	state.value = setter(state.value);
+	state.subscriptions.forEach((sub) => sub());
+    }
+
+    state.set = setState;
+
+    const subscribe = (callback) => {
+	const id = ID_COUNTER++;
+	state.subscriptions.set(id, callback);
+	return () => state.subscriptions.delete(id);
+    }
+
+    state.subscribe = subscribe;
+
+    return state; 
+}
+</script>
+<script>
+    let __Root_1_text = state("");
+
+    const __Root_1_list = state([]);
+
+    let __Root_1_key = 0;
+
+    const __Root_1_add = () => {
+	if (__Root_1_text.value.length == 0) return;
+
+	__Root_1_list.set((l) => [...l, [__Root_1_key++, __Root_1_text.value]]);
+	__Root_1_text.set(() => "");
+    }
+
+    const __Root_1_remove = (__Root_1_key) => {
+	__Root_1_list.set((l) => l.filter(([k, _]) => k !== __Root_1_key));
+    }
+
+</script>
+
+<marquee class="blue-text">
+    TODOOOOOOOO LIIIIISSSTTTTTT	
+</marquee>
+
+<div>
+    <span id="r2"></span>
+<script>
+
+    let __r2textNode = document.createTextNode(``);
+    const __r2setTextNode = (text) => __r2textNode.nodeValue = text;
+    
+        (__Root_1_list).subscribe(() => (__r2setTextNode)(((__Root_1_list).value).length));
+        (__r2setTextNode)(((__Root_1_list).value).length); 
+        
+    
+document.getElementById("r2").appendChild(__r2textNode);
+</script>item<span id="r3"></span>
+<script>
+
+    let __r3textNode = document.createTextNode(``);
+    const __r3setTextNode = (text) => __r3textNode.nodeValue = text;
+    
+        (__Root_1_list).subscribe(() => (__r3setTextNode)(((__Root_1_list).value).length !== 1 ? "s" : ""));
+        (__r3setTextNode)(((__Root_1_list).value).length !== 1 ? "s" : ""); 
+        
+    
+document.getElementById("r3").appendChild(__r3textNode);
+</script>in list.
+</div>
+
+<span id="r5"></span>
+                <script>
+                    const __elem_reactive_html_4 = document.getElementById("r5");
+                    const __elem6 = document.createElement("input");
+__elem6.setAttribute("id", "input");
+__elem6.setAttribute("type", "text");
+{
+                const value = __Root_1_text;
+                if (value.__STATE === true) {
+                    const update_fn = () => (__elem6).value = value.value;
+                    value.subscribe(update_fn);
+                    update_fn();
+                    __elem6.oninput = (e) => {
+                        value.set(() => e.target.value);
+                    };
+                }
+            }__elem_reactive_html_4.appendChild(__elem6);
+
+                </script>
+<span id="r8"></span>
+                <script>
+                    const __elem_reactive_html_7 = document.getElementById("r8");
+                    const __elem9 = document.createElement("button");
+__elem9.onclick = (__Root_1_add);const __textNode10 = document.createTextNode(`Click Me!`);
+__elem9.appendChild(__textNode10);
+__elem_reactive_html_7.appendChild(__elem9);
+
+                </script>
+
+<ul>
+<span id="r11"></span>
+                <script>
+                    const __elem12 = document.getElementById("r11");
+                    
+                    const r11loop = (arr) => {
+        __elem12.innerHTML = "";
+        for (let __i = 0; __i < arr.length; __i++) {
+            const i = arr[__i];
+            const __textNode13 = document.createTextNode(`
+    `);
+__elem12.appendChild(__textNode13);
+{
+
+                    const props = {};
+props.name = i[1];
+props.delete = () => __Root_1_remove(i[0]) ;
+                    
+    const b = state(false);
+;
+const __textNode15 = document.createTextNode(`
+
+`);
+__elem12.appendChild(__textNode15);
+const __elem16 = document.createElement("li");
+const __textNode17 = document.createTextNode(`
+    `);
+__elem16.appendChild(__textNode17);
+const __elem18 = document.createElement("input");
+__elem18.setAttribute("type", "checkbox");
+{
+                const value = b;
+                if (value.__STATE === true) {
+                    const update_fn = () => (__elem18).checked = value.value;
+                    value.subscribe(update_fn);
+                    update_fn();
+                    __elem18.onchange = (e) => {
+                        console.log(e.target.checked);
+                        value.set(() => e.target.checked);
+                    };
+                }
+            }__elem16.appendChild(__elem18);
+const __textNode19 = document.createTextNode(` 
+    `);
+__elem16.appendChild(__textNode19);
+const __elem20 = document.createElement("span");
+const __21update_attr = (val) => __elem20.setAttribute("style", val);
+
+        (b).subscribe(() => (__21update_attr)(((b).value) ? "text-decoration: line-through;" : ""));
+        (__21update_attr)(((b).value) ? "text-decoration: line-through;" : ""); 
+        
+const __textNode22 = document.createTextNode(`
+	`);
+__elem20.appendChild(__textNode22);
+
+    let __r23textNode = document.createTextNode(``);
+    const __r23setTextNode = (text) => __r23textNode.nodeValue = text;
+    
+        
+        (__r23setTextNode)(props.name); 
+        
+    
+__elem20.appendChild(__r23textNode);const __textNode24 = document.createTextNode(`	`);
+__elem20.appendChild(__textNode24);
+const __elem25 = document.createElement("button");
+__elem25.onclick = (props.delete);const __textNode26 = document.createTextNode(`delete`);
+__elem25.appendChild(__textNode26);
+__elem20.appendChild(__elem25);
+const __textNode27 = document.createTextNode(`
+    `);
+__elem20.appendChild(__textNode27);
+__elem16.appendChild(__elem20);
+const __textNode28 = document.createTextNode(`
+`);
+__elem16.appendChild(__textNode28);
+__elem12.appendChild(__elem16);
+const __textNode29 = document.createTextNode(`
+`);
+__elem12.appendChild(__textNode29);
+}
+const __textNode30 = document.createTextNode(`
+`);
+__elem12.appendChild(__textNode30);
+
+        }
+    };
+                    
+        (__Root_1_list).subscribe(() => (r11loop)(((__Root_1_list).value)));
+        (r11loop)(((__Root_1_list).value)); 
+         
+                </script></ul>
+
+<style>
+    div {
+	color: red;
+    }
+
+    .blue-text {
+	color: blue;
+    }
+
+    html {
+	background-color: black;
+	color: white;
+    }
+</style>
+

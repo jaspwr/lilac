@@ -1,0 +1,52 @@
+<script>
+    let text = state("");
+
+    const list = state([]);
+
+    let key = 0;
+
+    const add = () => {
+	if (text.value.length == 0) return;
+
+	list.set((l) => [...l, [key++, text.value]]);
+	text.set(() => "");
+    }
+
+    const remove = (key) => {
+	list.set((l) => l.filter(([k, _]) => k !== key));
+    }
+
+</script>
+
+<marquee class="blue-text">
+    TODOOOOOOOO LIIIIISSSTTTTTT	
+</marquee>
+
+<div>
+    {$list.length} item{$list.length !== 1 ? "s" : ""} in list.
+</div>
+
+<input id="input" type="text" bind={text}/>
+<button onclick={add}>Click Me!</button>
+
+<ul>
+{#for i in $list}
+    <ListItem name={i[1]} delete={() => remove(i[0]) } />
+{/for}
+</ul>
+
+<style>
+    div {
+	color: red;
+    }
+
+    .blue-text {
+	color: blue;
+    }
+
+    html {
+	background-color: black;
+	color: white;
+    }
+</style>
+
