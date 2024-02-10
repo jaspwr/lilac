@@ -21,7 +21,7 @@
 
 <!-- hello i'm a commnet-->
 
-<marquee class="blue-text">
+<marquee id="bl" class="blue-text">
     TODOOOOOOOO LIIIIISSSTTTTTT	
 </marquee>
 
@@ -39,6 +39,10 @@
 </ul>
 
 <style>
+    #bl {
+	font-size: 30px;
+    }
+
     div {
 	color: red;
     }

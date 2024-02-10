@@ -22,10 +22,8 @@ fn add_class(e: &mut Element, class: String) {
             e.classes = Some(ClassList::Static(vec![class]));
         }
         Some(classes_) => match classes_ {
-            ClassList::Static(s) => {
-                let mut new_classes = vec![class];
-                new_classes.extend(s.clone());
-                e.classes = Some(ClassList::Static(new_classes));
+            ClassList::Static(classes_) => {
+                classes_.push(class.clone());
             }
             ClassList::Reactive(expr) => {
                 e.classes = Some(ClassList::Reactive(format!(
@@ -45,12 +43,14 @@ fn replace_refs(
     classes: &Vec<String>,
     tags: &Vec<String>,
 ) {
+    println!("{:#?}", classes);
     if let Node::Element(e) = node {
         if let Some(id) = &mut e.id {
             match id {
                 Id::Static(s) => {
-                    let class = format!("id{}{}", prefix, s);
                     if ids.contains(s) {
+                        let class = format!("id{}{}", prefix, s);
+                        println!("Adding class {}", class);
                         add_class(e, class);
                     }
                 }
@@ -64,18 +64,17 @@ fn replace_refs(
 
         if let Some(classes_) = &mut e.classes {
             match classes_ {
-                ClassList::Static(s) => {
-                    let mut new_classes = vec![];
-                    for c in s {
-                        if classes.contains(c) {
-                            new_classes.push(format!("class{}{}", prefix, c));
+                ClassList::Static(cl) => {
+                    for c in cl.clone() {
+                        if classes.contains(&c) {
+                            add_class(e, format!("class{}{}", prefix, c));
                         }
                     }
-                    e.classes = Some(ClassList::Static(new_classes));
                 }
                 ClassList::Reactive(expr) => {
                     e.classes = Some(ClassList::Reactive(format!(
-                        "({}).split(\" \").map((s) => \"class{}\" + s).join()",
+                        "({}) + \" \" + ({}).split(\" \").map((s) => \"class{}\" + s).join()",
+                        expr.clone(),
                         expr.clone(),
                         prefix
                     )));
@@ -108,7 +107,7 @@ fn handle_css(css: &mut StyleSheet, prefix: &str) -> (Vec<String>, Vec<String>, 
             classes.push(c.clone());
             rule.selector = Selector::Class(format!("class{}{}", prefix, c));
         } else if let Selector::ID(id) = &mut rule.selector {
-            classes.push(id.clone());
+            ids.push(id.clone());
             rule.selector = Selector::Class(format!("id{}{}", prefix, id));
         }
     }
