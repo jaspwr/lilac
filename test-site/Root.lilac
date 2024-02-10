@@ -18,7 +18,10 @@
 
 </script>
 
-<marquee class="blue-text">
+
+<!-- hello i'm a commnet-->
+
+<marquee class={"blue-" + "text"}>
     TODOOOOOOOO LIIIIISSSTTTTTT	
 </marquee>
 
@@ -40,13 +43,9 @@
 	color: red;
     }
 
+    /* comment..... */
     .blue-text {
 	color: blue;
-    }
-
-    html {
-	background-color: black;
-	color: white;
     }
 </style>
 

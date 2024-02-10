@@ -1,15 +1,18 @@
 use std::{collections::HashMap, path::PathBuf, sync::atomic::AtomicUsize, usize};
 
+use css::StyleSheet;
 use parse::{parse_full, CompilerError};
 
 pub static ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 mod codegen;
+mod css_component_scoping;
 mod js_component_scoping;
 mod parse;
 mod utils;
 mod job;
 mod compile;
+mod css;
 
 use clap::{Parser, Subcommand};
 
@@ -20,10 +23,6 @@ struct Args {
     /// Path to output file to.
     #[arg(short, long, default_value_t = String::from("output.html"))]
     output: String, 
-
-    /// Number of times to greet
-    #[arg(short, long, default_value_t = 1)]
-    count: u8,
 
     #[command(subcommand)]
     command: Option<Command>,
@@ -71,6 +70,7 @@ pub enum Node {
     },
     Element(Element),
     ScriptTag(ScriptTag),
+    StyleTag(StyleSheet),
     Text(String),
     ReactiveText(String),
     ConditionalElements {
@@ -88,8 +88,40 @@ pub enum Node {
 #[derive(Debug, Clone)]
 pub struct Element {
     name: String,
+    id: Option<Id>,
+    classes: Option<ClassList>, 
     attributes: Vec<Attribute>,
     children: Vec<Node>,
+}
+
+#[derive(Debug, Clone)]
+pub enum Id {
+    Static(String),
+    Reactive(JSExpression),
+}
+
+impl Id {
+    pub fn is_reactive(&self) -> bool {
+        match self {
+            Id::Reactive(_) => true,
+            _ => false,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum ClassList {
+    Static(Vec<String>),
+    Reactive(JSExpression)
+}
+
+impl ClassList {
+    pub fn is_reactive(&self) -> bool {
+        match self {
+            ClassList::Reactive(_) => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -111,6 +143,13 @@ impl Attribute {
             _ => false,
         }
     } 
+
+    pub fn name<'a>(&'a self) -> &'a String {
+        match self {
+            Attribute::Reactive(ra) => &ra.name,
+            Attribute::Static(sa) => &sa.name
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

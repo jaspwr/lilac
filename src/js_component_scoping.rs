@@ -43,8 +43,6 @@ impl ComponentVariableRenamer {
     pub fn process_no_declared(&self, expr: &JSExpression) -> JSExpression {
         let mut expr = expr.clone();
 
-        println!("!!!!!!!!!!! {} {:?}", expr, self.identifiers.borrow());
-
         for ident in self.identifiers.borrow().iter() {
             let repl = self.rename(ident);
             expr = find_and_replace_js_identifiers(&expr, ident, &repl);

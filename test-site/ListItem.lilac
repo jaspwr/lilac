@@ -4,8 +4,14 @@
 
 <li>
     <input type="checkbox" bind={b}/> 
-    <span style={$b ? "text-decoration: line-through;" : ""}>
+    <span class="blue-text" style={$b ? "text-decoration: line-through;" : ""}>
 	{props.name}
 	<button onclick={props.delete}>delete</button>
     </span>
 </li>
+
+<style>
+.blue-text {
+    color: purple;
+}
+</style>

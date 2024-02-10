@@ -1,4 +1,8 @@
-use crate::{Attribute, Component, Element, Node};
+use std::string::ParseError;
+
+use owo_colors::OwoColorize;
+
+use crate::{Attribute, ClassList, Component, Element, Id, Node};
 
 pub fn parse_full(input: &str, component_name: &str) -> Result<Component, CompilerError> {
     let children = parse(input, 0, input.len())?;
@@ -45,6 +49,8 @@ fn parse(input: &str, start: usize, end: usize) -> Result<Vec<Node>, CompilerErr
     let mut text = String::new();
 
     while pos < end {
+        skip_comments(input, &mut pos);
+
         let c = input.chars().nth(pos).unwrap();
 
         if c == '<' {
@@ -77,7 +83,6 @@ fn handle_expression(input: &str, pos: &mut usize, opening: String) -> Result<No
     assert!(opening.starts_with("#"));
     let opening_tokens = tokenize_expression(opening);
 
-    println!("{:?}", opening_tokens);
     if opening_tokens.len() < 2 {
         return Err(CompilerError {
             position: *pos,
@@ -116,7 +121,6 @@ fn handle_expression(input: &str, pos: &mut usize, opening: String) -> Result<No
                 reactive_list = true;
                 iteratable = opening_tokens[4..].join(" ");
             }
-
 
             let opening_pos = *pos;
             let closing_pos = search_for_closing(input, "{/for}", pos)?;
@@ -221,6 +225,26 @@ enum AttrParsingContext {
     Curly,
 }
 
+fn skip_comments(input: &str, pos: &mut usize) {
+    let mut in_comment = false;
+
+    if input[*pos..].starts_with("<!--") {
+        in_comment = true;
+        *pos += 4;
+    }
+
+    while *pos < input.len() && in_comment {
+        if in_comment {
+            if input[*pos..].starts_with("-->") {
+                *pos += 3;
+                return;
+            }
+        }
+
+        *pos += 1;
+    }
+}
+
 fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
     let starting_pos = *pos;
 
@@ -246,7 +270,9 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
 
     let mut attr_context = AttrParsingContext::None;
 
-    while *pos < input.len() && !(attr_context == AttrParsingContext::None && input[*pos..].starts_with(">")) {
+    while *pos < input.len()
+        && !(attr_context == AttrParsingContext::None && input[*pos..].starts_with(">"))
+    {
         let c = input[*pos..].chars().next().unwrap();
 
         match attr_context {
@@ -292,7 +318,6 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
         } else {
             token.push(c);
         }
-
 
         *pos += 1;
     }
@@ -386,8 +411,22 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
     }
 
     if name == "script" {
-        let code = input[opening_tag_end..closing_tag_pos].to_string();
-        return Ok(Node::ScriptTag(crate::ScriptTag { attributes, code }));
+        let js = input[opening_tag_end..closing_tag_pos].to_string();
+        return Ok(Node::ScriptTag(crate::ScriptTag {
+            attributes,
+            code: js,
+        }));
+    }
+
+    if name == "style" {
+        let css = &input[opening_tag_end..closing_tag_pos];
+        let css = crate::css::parse(css).map_err(|e| CompilerError {
+            position: e.location + opening_tag_end,
+            message: format!("{}: {}", "CSS syntax error".red(), e.message),
+        })?;
+        println!("AAA {:#?}", css);
+
+        return Ok(Node::StyleTag(css));
     }
 
     if name.chars().next().unwrap().is_uppercase() {
@@ -399,8 +438,37 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
         });
     }
 
+    let id = attributes
+        .iter()
+        .find(|a| a.name() == "id")
+        .map(|a| match a {
+            Attribute::Static(sa) => Id::Static(sa.value.clone()),
+            Attribute::Reactive(ra) => Id::Reactive(ra.value.clone()),
+        });
+
+    let classes = attributes
+        .iter()
+        .find(|a| a.name() == "class")
+        .map(|a| match a {
+            Attribute::Static(sa) => ClassList::Static(
+                sa.value
+                    .split(" ")
+                    .map(|s| s.to_string())
+                    .filter(|s| s.len() != 0)
+                    .collect(),
+            ),
+            Attribute::Reactive(ra) => ClassList::Reactive(ra.value.clone()),
+        });
+
+    let attributes = attributes
+        .into_iter()
+        .filter(|a| a.name() != "id" && a.name() != "class")
+        .collect();
+
     Ok(Node::Element(Element {
         name,
+        id,
+        classes,
         attributes,
         children,
     }))

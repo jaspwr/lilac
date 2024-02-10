@@ -1,9 +1,7 @@
 use std::{ops::DerefMut, sync::atomic::Ordering};
 
 use crate::{
-    js_component_scoping::ComponentVariableRenamer, utils::find_and_replace_js_identifiers,
-    Attribute, Component, Element, JSExpression, Node, ReactiveAttribute, ScriptTag,
-    StaticAttribute, ID_COUNTER,
+    css::{Rule, Selector}, js_component_scoping::ComponentVariableRenamer, utils::find_and_replace_js_identifiers, Attribute, ClassList, Component, Element, Id, JSExpression, Node, ReactiveAttribute, ScriptTag, StaticAttribute, ID_COUNTER
 };
 
 type CVR = ComponentVariableRenamer;
@@ -71,6 +69,7 @@ impl Node {
             } => conditional_elements_codegen(condition, children, _type, cvr),
             Node::ComponentHole { .. } => panic!("Component was not replaced."),
             Node::ScriptTag(st) => st.codegen(_type, cvr),
+            Node::StyleTag(_) => unreachable!(), 
         }
     }
 }
@@ -84,6 +83,8 @@ fn script_tag_to_element(tag: &ScriptTag, var_renamer: &CVR) -> Element {
 
     Element {
         name: "script".to_string(),
+        id: None,
+        classes: None,
         attributes,
         children,
     }
@@ -123,7 +124,14 @@ impl Element {
     fn html_codegen(&self, _type: &CodegenType, cvr: &CVR) -> String {
         assert!(_type.is_html());
 
-        if has_reactive_attributes(&self.attributes) {
+        if has_reactive_attributes(&self.attributes)
+            || self.id.as_ref().map(|id| id.is_reactive()).unwrap_or(false)
+            || self
+                .classes
+                .as_ref()
+                .map(|classes| classes.is_reactive())
+                .unwrap_or(false)
+        {
             let elem_var_name = format!(
                 "__elem_reactive_html_{}",
                 ID_COUNTER.fetch_add(1, Ordering::SeqCst)
@@ -141,6 +149,30 @@ impl Element {
         }
 
         let mut code = format!("<{}", self.name);
+
+        if let Some(id) = &self.id {
+            match id {
+                Id::Static(id) => {
+                    code.push_str(&format!(" id=\"{}\"", id));
+                }
+                Id::Reactive(_) => {
+                    panic!("Should have fallen back to JS Dom codegen.");
+                }
+            }
+        }
+
+        if let Some(classes) = &self.classes {
+            match classes {
+                ClassList::Static(classes) => {
+                    println!("Static classes: {:?}", classes);
+                    code.push_str(&format!(" class=\"{}\"", classes.join(" ")));
+                }
+                ClassList::Reactive(_) => {
+                    panic!("Should have fallen back to JS Dom codegen.");
+                }
+            }
+        }
+
         for attr in &self.attributes {
             match attr {
                 Attribute::Static(StaticAttribute { name, value }) => {
@@ -172,6 +204,41 @@ impl Element {
             "const {} = document.createElement(\"{}\");\n",
             elem_var_name, self.name
         );
+
+        if let Some(id) = &self.id {
+            match id {
+                Id::Static(id) => {
+                    code.push_str(&format!("{elem_var_name}.id = \"{id}\";\n"));
+                }
+                Id::Reactive(expr) => {
+                    let update_fn_var_name =
+                        format!("__{}update_id", ID_COUNTER.fetch_add(1, Ordering::SeqCst));
+                    let r = reactive_expression(&expr, &update_fn_var_name, cvr);
+                    code.push_str(&format!(
+                        "const {update_fn_var_name} = (val) => {elem_var_name}.id = val;\n{r}\n"
+                    ));
+                }
+            }
+        }
+
+        if let Some(classes) = &self.classes {
+            match classes {
+                ClassList::Static(classes) => {
+                    let classes = classes.join(" ");
+                    code.push_str(&format!("{elem_var_name}.className = \"{classes}\";\n"));
+                }
+                ClassList::Reactive(expr) => {
+                    let update_fn_var_name = format!(
+                        "__{}update_classes",
+                        ID_COUNTER.fetch_add(1, Ordering::SeqCst)
+                    );
+                    let r = reactive_expression(&expr, &update_fn_var_name, cvr);
+                    code.push_str(&format!(
+                        "const {update_fn_var_name} = (val) => {elem_var_name}.className = val;\n{r}\n"
+                    ));
+                }
+            }
+        }
 
         for attr in &self.attributes {
             handle_attr(
@@ -252,7 +319,6 @@ fn handle_special_attr(
     name: &String,
     value: &JSExpression,
 ) -> bool {
-    println!("Handling special attr: {}", name);
     if name == "onclick" {
         let value = cvr.process_no_declared(&value);
         let c = format!("{elem_var_name}.onclick = ({value});");
@@ -296,7 +362,6 @@ fn handle_special_attr(
                     value.subscribe(update_fn);
                     update_fn();
                     {elem_var_name}.onchange = (e) => {{
-                        console.log(e.target.checked);
                         value.set(() => e.target.checked);
                     }};
                 }}
@@ -506,14 +571,6 @@ const {elem_var_name} = document.createElement(\"span\");
     }
 }
 
-fn wrap_in_span(c: &Node) -> Node {
-    Node::Element(Element {
-        name: "span".to_string(),
-        attributes: vec![],
-        children: vec![c.clone()],
-    })
-}
-
 fn loop_codegen(
     reactive_list: bool,
     iterator_variable: &String,
@@ -532,6 +589,8 @@ fn loop_codegen(
     let children = if reactive_list {
         Node::Element(Element {
             name: "span".to_string(),
+            id: None,
+            classes: None,
             attributes: vec![],
             children: children.to_vec(),
         })
@@ -609,6 +668,36 @@ fn loop_codegen(
                 {parent_elem_var_name}.appendChild({elem_var_name});
                 "
             )
+        }
+    }
+}
+
+pub fn codegen_stylesheet(ss: &Vec<Rule>) -> String {
+    ss.iter().map(|r| r.codegen()).collect()
+}
+
+impl Rule {
+    fn codegen(&self) -> String {
+        let mut code = format!("{} {{", self.selector.codegen());
+
+        for prop in &self.properties {
+            code.push_str(&format!("{}:{};", prop.name, prop.value));
+        }
+
+        code.push_str("} ");
+
+        code
+    }
+}
+
+impl Selector {
+    fn codegen(&self) -> String {
+        match self {
+            Selector::None => unreachable!(),
+            Selector::All => "*".to_string(),
+            Selector::ID(id) => format!("#{}", id),
+            Selector::Class(class) => format!(".{}", class),
+            Selector::Tag(tag) => tag.clone(),
         }
     }
 }
