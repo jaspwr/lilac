@@ -117,91 +117,78 @@ const lstate = (initialState) => {
 
 
 
-<span id="r3"></span>
-                <script>
-                    const __elem_reactive_html_2 = document.getElementById("r3");
-                    const __elem4 = document.createElement("marquee");
-const __5update_classes = (val) => __elem4.className = val;
-
-        
-        (__5update_classes)(("blue-" + "text").split(" ").map((s) => "class-compRoot-" + s).join()); 
-        
-const __textNode6 = document.createTextNode(`
+<marquee class="class-compRoot-blue-text">
     TODOOOOOOOO LIIIIISSSTTTTTT	
-`);
-__elem4.appendChild(__textNode6);
-__elem_reactive_html_2.appendChild(__elem4);
-
-                </script>
+</marquee>
 
 <div class="tag-compRoot-div">
-    <span id="r7"></span>
+    <span id="r2"></span>
 <script>
 
-    let __r7textNode = document.createTextNode(``);
-    const __r7setTextNode = (text) => __r7textNode.nodeValue = text;
+    let __r2textNode = document.createTextNode(``);
+    const __r2setTextNode = (text) => __r2textNode.nodeValue = text;
     
-        (__Root_1_list).subscribe(() => (__r7setTextNode)(((__Root_1_list).value).length));
-        (__r7setTextNode)(((__Root_1_list).value).length); 
+        (__Root_1_list).subscribe(() => (__r2setTextNode)(((__Root_1_list).value).length));
+        (__r2setTextNode)(((__Root_1_list).value).length); 
         
     
-document.getElementById("r7").appendChild(__r7textNode);
-</script>item<span id="r8"></span>
+document.getElementById("r2").appendChild(__r2textNode);
+</script>item<span id="r3"></span>
 <script>
 
-    let __r8textNode = document.createTextNode(``);
-    const __r8setTextNode = (text) => __r8textNode.nodeValue = text;
+    let __r3textNode = document.createTextNode(``);
+    const __r3setTextNode = (text) => __r3textNode.nodeValue = text;
     
-        (__Root_1_list).subscribe(() => (__r8setTextNode)(((__Root_1_list).value).length !== 1 ? "s" : ""));
-        (__r8setTextNode)(((__Root_1_list).value).length !== 1 ? "s" : ""); 
+        (__Root_1_list).subscribe(() => (__r3setTextNode)(((__Root_1_list).value).length !== 1 ? "s" : ""));
+        (__r3setTextNode)(((__Root_1_list).value).length !== 1 ? "s" : ""); 
         
     
-document.getElementById("r8").appendChild(__r8textNode);
+document.getElementById("r3").appendChild(__r3textNode);
 </script>in list.
 </div>
 
-<span id="r10"></span>
+<span id="r5"></span>
                 <script>
-                    const __elem_reactive_html_9 = document.getElementById("r10");
-                    const __elem11 = document.createElement("input");
-__elem11.id = "input";
-__elem11.setAttribute("type", "text");
+                    const __elem_reactive_html_4 = document.getElementById("r5");
+                    const __elem6 = document.createElement("input");
+__elem6.id = "input";
+__elem6.setAttribute("type", "text");
 {
                 const value = __Root_1_text;
                 if (value.__STATE === true) {
-                    const update_fn = () => (__elem11).value = value.value;
+                    const update_fn = () => (__elem6).value = value.value;
                     value.subscribe(update_fn);
                     update_fn();
-                    __elem11.oninput = (e) => {
+                    __elem6.oninput = (e) => {
                         value.set(() => e.target.value);
                     };
                 }
-            }__elem_reactive_html_9.appendChild(__elem11);
+            }__elem_reactive_html_4.appendChild(__elem6);
 
                 </script>
-<span id="r13"></span>
+<span id="r8"></span>
                 <script>
-                    const __elem_reactive_html_12 = document.getElementById("r13");
-                    const __elem14 = document.createElement("button");
-__elem14.onclick = (__Root_1_add);const __textNode15 = document.createTextNode(`Click Me!`);
-__elem14.appendChild(__textNode15);
-__elem_reactive_html_12.appendChild(__elem14);
+                    const __elem_reactive_html_7 = document.getElementById("r8");
+                    const __elem9 = document.createElement("button");
+__elem9.onclick = (__Root_1_add);const __textNode10 = document.createTextNode(`Click Me!`);
+__elem9.appendChild(__textNode10);
+__elem_reactive_html_7.appendChild(__elem9);
 
                 </script>
 
 <ul>
-<span id="r16"></span>
+<span id="r11"></span>
                 <script>
-                    const __elem17 = document.getElementById("r16");
+                    const __elem12 = document.getElementById("r11");
                     
-                    const r16loop = (arr) => {
-        __elem17.innerHTML = "";
+                    const r11loop = (arr) => {
+        __elem12.innerHTML = "";
         for (let __i = 0; __i < arr.length; __i++) {
             const i = arr[__i];
-            const __elem18 = document.createElement("span");
-const __textNode19 = document.createTextNode(`
+            const __elem13 = document.createElement("span");
+const __textNode14 = document.createTextNode(`
     `);
-__elem18.appendChild(__textNode19);
+__elem13.appendChild(__textNode14);
 {
 
                     const props = {};
@@ -210,74 +197,74 @@ props.delete = () => __Root_1_remove(i[0]) ;
                     
     const b = state(false);
 ;
-const __textNode21 = document.createTextNode(`
+const __textNode16 = document.createTextNode(`
 
 `);
-__elem18.appendChild(__textNode21);
-const __elem22 = document.createElement("li");
-const __textNode23 = document.createTextNode(`
+__elem13.appendChild(__textNode16);
+const __elem17 = document.createElement("li");
+const __textNode18 = document.createTextNode(`
     `);
-__elem22.appendChild(__textNode23);
-const __elem24 = document.createElement("input");
-__elem24.setAttribute("type", "checkbox");
+__elem17.appendChild(__textNode18);
+const __elem19 = document.createElement("input");
+__elem19.setAttribute("type", "checkbox");
 {
                 const value = b;
                 if (value.__STATE === true) {
-                    const update_fn = () => (__elem24).checked = value.value;
+                    const update_fn = () => (__elem19).checked = value.value;
                     value.subscribe(update_fn);
                     update_fn();
-                    __elem24.onchange = (e) => {
+                    __elem19.onchange = (e) => {
                         value.set(() => e.target.checked);
                     };
                 }
-            }__elem22.appendChild(__elem24);
-const __textNode25 = document.createTextNode(` 
+            }__elem17.appendChild(__elem19);
+const __textNode20 = document.createTextNode(` 
     `);
-__elem22.appendChild(__textNode25);
-const __elem26 = document.createElement("span");
-__elem26.className = "class-compListItem-blue-text";
-const __27update_attr = (val) => __elem26.setAttribute("style", val);
+__elem17.appendChild(__textNode20);
+const __elem21 = document.createElement("span");
+__elem21.className = "class-compListItem-blue-text";
+const __22update_attr = (val) => __elem21.setAttribute("style", val);
 
-        (b).subscribe(() => (__27update_attr)(((b).value) ? "text-decoration: line-through;" : ""));
-        (__27update_attr)(((b).value) ? "text-decoration: line-through;" : ""); 
+        (b).subscribe(() => (__22update_attr)(((b).value) ? "text-decoration: line-through;" : ""));
+        (__22update_attr)(((b).value) ? "text-decoration: line-through;" : ""); 
         
-const __textNode28 = document.createTextNode(`
+const __textNode23 = document.createTextNode(`
 	`);
-__elem26.appendChild(__textNode28);
+__elem21.appendChild(__textNode23);
 
-    let __r29textNode = document.createTextNode(``);
-    const __r29setTextNode = (text) => __r29textNode.nodeValue = text;
+    let __r24textNode = document.createTextNode(``);
+    const __r24setTextNode = (text) => __r24textNode.nodeValue = text;
     
         
-        (__r29setTextNode)(props.name); 
+        (__r24setTextNode)(props.name); 
         
     
-__elem26.appendChild(__r29textNode);const __textNode30 = document.createTextNode(`	`);
-__elem26.appendChild(__textNode30);
-const __elem31 = document.createElement("button");
-__elem31.onclick = (props.delete);const __textNode32 = document.createTextNode(`delete`);
-__elem31.appendChild(__textNode32);
-__elem26.appendChild(__elem31);
-const __textNode33 = document.createTextNode(`
+__elem21.appendChild(__r24textNode);const __textNode25 = document.createTextNode(`	`);
+__elem21.appendChild(__textNode25);
+const __elem26 = document.createElement("button");
+__elem26.onclick = (props.delete);const __textNode27 = document.createTextNode(`delete`);
+__elem26.appendChild(__textNode27);
+__elem21.appendChild(__elem26);
+const __textNode28 = document.createTextNode(`
     `);
-__elem26.appendChild(__textNode33);
-__elem22.appendChild(__elem26);
-const __textNode34 = document.createTextNode(`
+__elem21.appendChild(__textNode28);
+__elem17.appendChild(__elem21);
+const __textNode29 = document.createTextNode(`
 `);
-__elem22.appendChild(__textNode34);
-__elem18.appendChild(__elem22);
-const __textNode35 = document.createTextNode(`
+__elem17.appendChild(__textNode29);
+__elem13.appendChild(__elem17);
+const __textNode30 = document.createTextNode(`
 
 `);
-__elem18.appendChild(__textNode35);
-const __textNode36 = document.createTextNode(`
+__elem13.appendChild(__textNode30);
+const __textNode31 = document.createTextNode(`
 `);
-__elem18.appendChild(__textNode36);
+__elem13.appendChild(__textNode31);
 }
-const __textNode37 = document.createTextNode(`
+const __textNode32 = document.createTextNode(`
 `);
-__elem18.appendChild(__textNode37);
-__elem17.appendChild(__elem18);
+__elem13.appendChild(__textNode32);
+__elem12.appendChild(__elem13);
 
         }
     };
@@ -286,11 +273,11 @@ __elem17.appendChild(__elem18);
                 const i = value;
                 let wrapper_span = undefined;
                 {
-                    const __elem17 = document.createElement("span");
-                    const __elem18 = document.createElement("span");
-const __textNode19 = document.createTextNode(`
+                    const __elem12 = document.createElement("span");
+                    const __elem13 = document.createElement("span");
+const __textNode14 = document.createTextNode(`
     `);
-__elem18.appendChild(__textNode19);
+__elem13.appendChild(__textNode14);
 {
 
                     const props = {};
@@ -299,92 +286,92 @@ props.delete = () => __Root_1_remove(i[0]) ;
                     
     const b = state(false);
 ;
-const __textNode21 = document.createTextNode(`
+const __textNode16 = document.createTextNode(`
 
 `);
-__elem18.appendChild(__textNode21);
-const __elem22 = document.createElement("li");
-const __textNode23 = document.createTextNode(`
+__elem13.appendChild(__textNode16);
+const __elem17 = document.createElement("li");
+const __textNode18 = document.createTextNode(`
     `);
-__elem22.appendChild(__textNode23);
-const __elem24 = document.createElement("input");
-__elem24.setAttribute("type", "checkbox");
+__elem17.appendChild(__textNode18);
+const __elem19 = document.createElement("input");
+__elem19.setAttribute("type", "checkbox");
 {
                 const value = b;
                 if (value.__STATE === true) {
-                    const update_fn = () => (__elem24).checked = value.value;
+                    const update_fn = () => (__elem19).checked = value.value;
                     value.subscribe(update_fn);
                     update_fn();
-                    __elem24.onchange = (e) => {
+                    __elem19.onchange = (e) => {
                         value.set(() => e.target.checked);
                     };
                 }
-            }__elem22.appendChild(__elem24);
-const __textNode25 = document.createTextNode(` 
+            }__elem17.appendChild(__elem19);
+const __textNode20 = document.createTextNode(` 
     `);
-__elem22.appendChild(__textNode25);
-const __elem26 = document.createElement("span");
-__elem26.className = "class-compListItem-blue-text";
-const __27update_attr = (val) => __elem26.setAttribute("style", val);
+__elem17.appendChild(__textNode20);
+const __elem21 = document.createElement("span");
+__elem21.className = "class-compListItem-blue-text";
+const __22update_attr = (val) => __elem21.setAttribute("style", val);
 
-        (b).subscribe(() => (__27update_attr)(((b).value) ? "text-decoration: line-through;" : ""));
-        (__27update_attr)(((b).value) ? "text-decoration: line-through;" : ""); 
+        (b).subscribe(() => (__22update_attr)(((b).value) ? "text-decoration: line-through;" : ""));
+        (__22update_attr)(((b).value) ? "text-decoration: line-through;" : ""); 
         
-const __textNode28 = document.createTextNode(`
+const __textNode23 = document.createTextNode(`
 	`);
-__elem26.appendChild(__textNode28);
+__elem21.appendChild(__textNode23);
 
-    let __r29textNode = document.createTextNode(``);
-    const __r29setTextNode = (text) => __r29textNode.nodeValue = text;
+    let __r24textNode = document.createTextNode(``);
+    const __r24setTextNode = (text) => __r24textNode.nodeValue = text;
     
         
-        (__r29setTextNode)(props.name); 
+        (__r24setTextNode)(props.name); 
         
     
-__elem26.appendChild(__r29textNode);const __textNode30 = document.createTextNode(`	`);
-__elem26.appendChild(__textNode30);
-const __elem31 = document.createElement("button");
-__elem31.onclick = (props.delete);const __textNode32 = document.createTextNode(`delete`);
-__elem31.appendChild(__textNode32);
-__elem26.appendChild(__elem31);
-const __textNode33 = document.createTextNode(`
+__elem21.appendChild(__r24textNode);const __textNode25 = document.createTextNode(`	`);
+__elem21.appendChild(__textNode25);
+const __elem26 = document.createElement("button");
+__elem26.onclick = (props.delete);const __textNode27 = document.createTextNode(`delete`);
+__elem26.appendChild(__textNode27);
+__elem21.appendChild(__elem26);
+const __textNode28 = document.createTextNode(`
     `);
-__elem26.appendChild(__textNode33);
-__elem22.appendChild(__elem26);
-const __textNode34 = document.createTextNode(`
+__elem21.appendChild(__textNode28);
+__elem17.appendChild(__elem21);
+const __textNode29 = document.createTextNode(`
 `);
-__elem22.appendChild(__textNode34);
-__elem18.appendChild(__elem22);
-const __textNode35 = document.createTextNode(`
+__elem17.appendChild(__textNode29);
+__elem13.appendChild(__elem17);
+const __textNode30 = document.createTextNode(`
 
 `);
-__elem18.appendChild(__textNode35);
-const __textNode36 = document.createTextNode(`
+__elem13.appendChild(__textNode30);
+const __textNode31 = document.createTextNode(`
 `);
-__elem18.appendChild(__textNode36);
+__elem13.appendChild(__textNode31);
 }
-const __textNode37 = document.createTextNode(`
+const __textNode32 = document.createTextNode(`
 `);
-__elem18.appendChild(__textNode37);
-__elem17.appendChild(__elem18);
+__elem13.appendChild(__textNode32);
+__elem12.appendChild(__elem13);
 
-                    wrapper_span = __elem17;
+                    wrapper_span = __elem12;
                 }
-                if (__elem17.childNodes.length === 0) {
-                    __elem17.appendChild(wrapper_span);
+                if (__elem12.childNodes.length === 0) {
+                    __elem12.appendChild(wrapper_span);
                 } else {
-                    __elem17.insertBefore(wrapper_span, __elem17.childNodes[position]);
+                    __elem12.insertBefore(wrapper_span, __elem12.childNodes[position]);
                 }
             };
 
             const remove = (position) => {
-                __elem17.removeChild(__elem17.childNodes[position]);
+                __elem12.removeChild(__elem12.childNodes[position]);
             };
 
             __Root_1_list.subscribeAdd(add);
             __Root_1_list.subscribeRemove(remove);
 
-            r16loop(__Root_1_list.value);
+            r11loop(__Root_1_list.value);
          
                 </script></ul>
 

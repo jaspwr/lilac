@@ -104,7 +104,7 @@ fn get_root_css(path: &PathBuf) -> Result<String, String> {
     }
 }
 
-fn collect_css(mut component: Component) -> (StyleSheet, Component) {
+fn collect_css(component: Component) -> (StyleSheet, Component) {
     let mut node = Node::Component(component.clone());
     let styles = _collect_css(&mut node);
     let component = match node {
