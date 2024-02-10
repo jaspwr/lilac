@@ -1,7 +1,7 @@
 use crate::{css::*, utils::children_of, ClassList, Component, Element, Id, Node};
 
 pub fn scope_css_to_component(mut component: Component, mut styles: StyleSheet) -> (StyleSheet, Component) {
-    let prefix = &format!("-comp{}-", component.name.clone());
+    let prefix = &format!("-{}-", component.name.clone());
 
     let mut node = Node::Component(component);
     let (ids, classes, tags) = handle_css(&mut styles, prefix);
