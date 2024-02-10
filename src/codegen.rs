@@ -54,9 +54,17 @@ impl Node {
             Node::ReactiveText(t) => reactive_text_codegen(t, _type, cvr),
             Node::Loop {
                 iterator_variable,
+                reactive_list,
                 iteratable,
                 children,
-            } => loop_codegen(iterator_variable, iteratable, children, _type, cvr),
+            } => loop_codegen(
+                *reactive_list,
+                iterator_variable,
+                iteratable,
+                children,
+                _type,
+                cvr,
+            ),
             Node::ConditionalElements {
                 condition,
                 children,
@@ -166,7 +174,14 @@ impl Element {
         );
 
         for attr in &self.attributes {
-            handle_attr(attr, &elem_var_name, &mut code, cvr, &self.name, self.attributes.clone());
+            handle_attr(
+                attr,
+                &elem_var_name,
+                &mut code,
+                cvr,
+                &self.name,
+                self.attributes.clone(),
+            );
         }
 
         let _type = CodegenType::JSDom {
@@ -249,14 +264,12 @@ fn handle_special_attr(
         // TODO: error handling
         assert!(elem_name == "input");
 
-        let input_type = attributes_all
-            .iter()
-            .find(|a| match a {
-                Attribute::Static(StaticAttribute { name, value: _ }) => name == "type",
-                _ => false,
-            });
+        let input_type = attributes_all.iter().find(|a| match a {
+            Attribute::Static(StaticAttribute { name, value: _ }) => name == "type",
+            _ => false,
+        });
 
-        let input_type = match input_type { 
+        let input_type = match input_type {
             Some(Attribute::Static(StaticAttribute { name: _, value })) => value,
             _ => return false,
         };
@@ -493,7 +506,16 @@ const {elem_var_name} = document.createElement(\"span\");
     }
 }
 
+fn wrap_in_span(c: &Node) -> Node {
+    Node::Element(Element {
+        name: "span".to_string(),
+        attributes: vec![],
+        children: vec![c.clone()],
+    })
+}
+
 fn loop_codegen(
+    reactive_list: bool,
     iterator_variable: &String,
     iteratable: &JSExpression,
     children: &[Node],
@@ -507,10 +529,19 @@ fn loop_codegen(
         parent_elem_var_name: elem_var_name.clone(),
     };
 
-    let children = children
-        .iter()
-        .map(|c| c.codegen(&child_type, cvr))
-        .collect::<String>();
+    let children = if reactive_list {
+        Node::Element(Element {
+            name: "span".to_string(),
+            attributes: vec![],
+            children: children.to_vec(),
+        })
+        .codegen(&child_type, cvr)
+    } else {
+        children
+            .into_iter()
+            .map(|c| c.codegen(&child_type, cvr))
+            .collect::<String>()
+    };
 
     let func = format!(
         "const {id}loop = (arr) => {{
@@ -522,30 +553,59 @@ fn loop_codegen(
     }};"
     );
 
+    let instantiate_and_subscribe = if reactive_list {
+        let list = cvr.process_no_declared(&iteratable);
+        format!(
+            "
+            const add = (value, position) => {{
+                const {iterator_variable} = value;
+                let wrapper_span = undefined;
+                {{
+                    const {elem_var_name} = document.createElement(\"span\");
+                    {children}
+                    wrapper_span = {elem_var_name};
+                }}
+                if ({elem_var_name}.childNodes.length === 0) {{
+                    {elem_var_name}.appendChild(wrapper_span);
+                }} else {{
+                    {elem_var_name}.insertBefore(wrapper_span, {elem_var_name}.childNodes[position]);
+                }}
+            }};
+
+            const remove = (position) => {{
+                {elem_var_name}.removeChild({elem_var_name}.childNodes[position]);
+            }};
+
+            {list}.subscribeAdd(add);
+            {list}.subscribeRemove(remove);
+
+            {id}loop({list}.value);
+        ",
+        )
+    } else {
+        reactive_expression(iteratable, &format!("{}loop", id), cvr)
+    };
+
     match _type {
         CodegenType::HTML => {
-            let r = reactive_expression(iteratable, &format!("{}loop", id), cvr);
-
             format!(
                 "<span id=\"{id}\"></span>
                 <script>
                     const {elem_var_name} = document.getElementById(\"{id}\");
                     
                     {func}
-                    {r} 
+                    {instantiate_and_subscribe} 
                 </script>"
             )
         }
         CodegenType::JSDom {
             parent_elem_var_name,
         } => {
-            let r = reactive_expression(iteratable, &format!("{}loop", id), cvr);
-
             format!(
                 "
                 const {elem_var_name} = document.createElement(\"span\");
                 {func}
-                {r}
+                {instantiate_and_subscribe}
                 {parent_elem_var_name}.appendChild({elem_var_name});
                 "
             )

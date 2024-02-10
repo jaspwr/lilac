@@ -1,19 +1,19 @@
 <script>
     let text = state("");
 
-    const list = state([]);
+    const list = lstate([[123, "hi"], [123123, "h"]]);
 
     let key = 0;
 
     const add = () => {
 	if (text.value.length == 0) return;
 
-	list.set((l) => [...l, [key++, text.value]]);
+	list.push([key++, text.value]);
 	text.set(() => "");
     }
 
     const remove = (key) => {
-	list.set((l) => l.filter(([k, _]) => k !== key));
+	list.findAndRemove(([k, _]) => k === key);
     }
 
 </script>
@@ -30,7 +30,7 @@
 <button onclick={add}>Click Me!</button>
 
 <ul>
-{#for i in $list}
+{#for i in $lstate list}
     <ListItem name={i[1]} delete={() => remove(i[0]) } />
 {/for}
 </ul>

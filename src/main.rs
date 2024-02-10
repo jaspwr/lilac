@@ -80,6 +80,7 @@ pub enum Node {
     Loop {
         iterator_variable: String,
         iteratable: JSExpression,
+        reactive_list: bool,
         children: Vec<Node>,
     },
 }

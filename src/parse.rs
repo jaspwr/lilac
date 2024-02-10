@@ -108,7 +108,15 @@ fn handle_expression(input: &str, pos: &mut usize, opening: String) -> Result<No
             }
 
             let iterator_variable = opening_tokens[1].clone();
-            let iteratable = opening_tokens[3..].join(" ");
+
+            let mut iteratable = opening_tokens[3..].join(" ");
+            let mut reactive_list = false;
+
+            if opening_tokens[3] == "$lstate" {
+                reactive_list = true;
+                iteratable = opening_tokens[4..].join(" ");
+            }
+
 
             let opening_pos = *pos;
             let closing_pos = search_for_closing(input, "{/for}", pos)?;
@@ -117,6 +125,7 @@ fn handle_expression(input: &str, pos: &mut usize, opening: String) -> Result<No
 
             Ok(Node::Loop {
                 iterator_variable,
+                reactive_list,
                 iteratable,
                 children,
             })
