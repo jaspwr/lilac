@@ -29,9 +29,10 @@ fn compile(job: &Job) -> Result<(), String> {
 
     for path in files {
         let component = load_componet(path).map_err(|e| e.to_string())?;
-        let component = scope_css_to_component(component);
        
         let (styles, component) = collect_css(component);
+        
+        let (styles, component) = scope_css_to_component(component, styles);
 
         stylesheet.extend(styles);
 
@@ -121,10 +122,11 @@ fn _collect_css(node: &mut Node) -> StyleSheet {
     }
 
     if let Some(children) = children_of(node) {
-        for node in children {
+        for i in (0..children.len()).rev() {
+            let node = &mut children[i];
             ss.extend(_collect_css(node));
             if let Node::StyleTag(_) = node {
-                *node = Node::Text("".to_string());
+                children.remove(i);
             }
         }
     }

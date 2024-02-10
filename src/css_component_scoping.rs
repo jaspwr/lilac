@@ -1,14 +1,10 @@
 use crate::{css::*, utils::children_of, ClassList, Component, Element, Id, Node};
 
-pub fn scope_css_to_component(mut component: Component) -> Component {
+pub fn scope_css_to_component(mut component: Component, mut styles: StyleSheet) -> (StyleSheet, Component) {
     let prefix = &format!("-comp{}-", component.name.clone());
 
     let mut node = Node::Component(component);
-    let (ids, classes, tags) = collect_css(&mut node, prefix);
-
-    println!("ids: {:?}", ids);
-    println!("classes: {:?}", classes);
-    println!("tags: {:?}", tags);
+    let (ids, classes, tags) = handle_css(&mut styles, prefix);
 
     replace_refs(&mut node, prefix, &ids, &classes, &tags);
 
@@ -17,26 +13,28 @@ pub fn scope_css_to_component(mut component: Component) -> Component {
         _ => unreachable!(),
     };
 
-    component
+    (styles, component)
 }
 
 fn add_class(e: &mut Element, class: String) {
     match &mut e.classes {
         None => {
             e.classes = Some(ClassList::Static(vec![class]));
-        },
-        Some(classes_) => {
-            match classes_ {
-                ClassList::Static(s) => {
-                    let mut new_classes = vec![class];
-                    new_classes.extend(s.clone());
-                    e.classes = Some(ClassList::Static(new_classes));
-                },
-                ClassList::Reactive(expr) => {
-                    e.classes = Some(ClassList::Reactive(format!("({}) + \" {}\"", expr.clone(), class))); 
-                }
-            }
         }
+        Some(classes_) => match classes_ {
+            ClassList::Static(s) => {
+                let mut new_classes = vec![class];
+                new_classes.extend(s.clone());
+                e.classes = Some(ClassList::Static(new_classes));
+            }
+            ClassList::Reactive(expr) => {
+                e.classes = Some(ClassList::Reactive(format!(
+                    "({}) + \" {}\"",
+                    expr.clone(),
+                    class
+                )));
+            }
+        },
     }
 }
 
@@ -55,11 +53,11 @@ fn replace_refs(
                     if ids.contains(s) {
                         add_class(e, class);
                     }
-                },
+                }
                 Id::Reactive(expr) => {
                     todo!();
                     // let class = format!("id{}{}", prefix, );
-                    // e.id = Some(Id::Reactive(format!("\"{}\" + ({})", prefix , expr.clone()))); 
+                    // e.id = Some(Id::Reactive(format!("\"{}\" + ({})", prefix , expr.clone())));
                 }
             }
         }
@@ -74,17 +72,20 @@ fn replace_refs(
                         }
                     }
                     e.classes = Some(ClassList::Static(new_classes));
-                },
+                }
                 ClassList::Reactive(expr) => {
-                    e.classes = Some(ClassList::Reactive(format!("({}).split(\" \").map((s) => \"class{}\" + s).join()", expr.clone(), prefix))); 
+                    e.classes = Some(ClassList::Reactive(format!(
+                        "({}).split(\" \").map((s) => \"class{}\" + s).join()",
+                        expr.clone(),
+                        prefix
+                    )));
                 }
             }
         }
 
         if tags.contains(&e.name) {
-             add_class(e, format!("tag{}{}", prefix, e.name));
+            add_class(e, format!("tag{}{}", prefix, e.name));
         }
-
     }
 
     if let Some(children) = children_of(node) {
@@ -94,32 +95,21 @@ fn replace_refs(
     }
 }
 
-fn collect_css(node: &mut Node, prefix: &str) -> (Vec<String>, Vec<String>, Vec<String>) {
+fn handle_css(css: &mut StyleSheet, prefix: &str) -> (Vec<String>, Vec<String>, Vec<String>) {
     let mut ids = vec![];
     let mut classes = vec![];
     let mut tags = vec![];
 
-    if let Node::StyleTag(css) = node {
-        for rule in css {
-            if let Selector::Tag(t) = &mut rule.selector {
-                tags.push(t.clone());
-                rule.selector = Selector::Class(format!("tag{}{}", prefix, t));
-            } else if let Selector::Class(c) = &mut rule.selector {
-                classes.push(c.clone());
-                rule.selector = Selector::Class(format!("class{}{}", prefix, c));
-            } else if let Selector::ID(id) = &mut rule.selector {
-                classes.push(id.clone());
-                rule.selector = Selector::Class(format!("id{}{}", prefix, id));
-            }
-        }
-    }
-
-    if let Some(children) = children_of(node) {
-        for node in children {
-            let (i, c, t) = collect_css(node, prefix);
-            ids.extend(i);
-            classes.extend(c);
-            tags.extend(t);
+    for rule in css {
+        if let Selector::Tag(t) = &mut rule.selector {
+            tags.push(t.clone());
+            rule.selector = Selector::Class(format!("tag{}{}", prefix, t));
+        } else if let Selector::Class(c) = &mut rule.selector {
+            classes.push(c.clone());
+            rule.selector = Selector::Class(format!("class{}{}", prefix, c));
+        } else if let Selector::ID(id) = &mut rule.selector {
+            classes.push(id.clone());
+            rule.selector = Selector::Class(format!("id{}{}", prefix, id));
         }
     }
 
