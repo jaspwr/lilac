@@ -6,8 +6,19 @@ pub fn fill_holes(
     root: &mut Node,
     components_map: &HashMap<String, Component>,
 ) -> Result<(), String> {
+    let recursion_stack = vec![];
+    _fill_holes(root, recursion_stack, components_map)
+}
+
+pub fn _fill_holes(
+    root: &mut Node,
+    recursion_stack: Vec<String>,
+    components_map: &HashMap<String, Component>,
+) -> Result<(), String> {
     if let Some(children) = children_of(root) {
         for node in children {
+            let mut recursion_stack = recursion_stack.clone();
+
             if let Node::ComponentHole {
                 name,
                 position,
@@ -27,10 +38,22 @@ pub fn fill_holes(
 
                 instance.props = props.clone();
 
+                if recursion_stack.contains(name) {
+                    instance.recursive = true;    
+                }
+
+                recursion_stack.push(name.clone());
+
                 *node = Node::Component(instance);
-            } else {
-                fill_holes(node, components_map)?;
             }
+
+            if let Node::Component(c) = node {
+                if c.recursive {
+                    continue;
+                }
+            }
+
+            _fill_holes(node, recursion_stack, components_map)?;
         }
     }
 

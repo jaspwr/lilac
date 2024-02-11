@@ -169,4 +169,6 @@ pub struct Component {
     name: String,
     props: Vec<Attribute>,
     children: Vec<Node>,
+    /// If the component instance is a child of the same component
+    recursive: bool,
 }

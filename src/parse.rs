@@ -11,6 +11,7 @@ pub fn parse_full(input: &str, component_name: &str) -> Result<Component, Compil
         name: component_name.to_string(),
         props: vec![],
         children,
+        recursive: false,
     })
 }
 
@@ -253,6 +254,8 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
 
     let name = grab_alphanum_token(input, pos);
 
+    println!("{}", &input[*pos..]);
+
     if name.is_empty() {
         return Err(CompilerError {
             position: *pos,
@@ -348,7 +351,15 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
             }
 
             if value.starts_with("\"") {
+                println!("VALUE: {}", value);
                 if !value.ends_with("\"") && value.len() > 1 {
+                    if value.ends_with(",") {
+                        return Err(CompilerError {
+                            position: *pos,
+                            message: "Commas should not be used to separate attribute arguments".to_string(),
+                        });
+                    }
+
                     return Err(CompilerError {
                         position: *pos,
                         message: "Expected \"".to_string(),
@@ -491,7 +502,18 @@ fn skip_whitespace(input: &str, pos: &mut usize) {
 }
 
 fn find_closing(input: &str, name: &str, mut pos: usize) -> Result<(usize, usize), CompilerError> {
+    let mut depth = 0;
+
     while pos < input.len() {
+        skip_comments(input, &mut pos);
+        if input[pos..].starts_with("<") {
+            let mut pos = pos + 1;
+            skip_whitespace(input, &mut pos);
+            if input[pos..].starts_with(name) {
+                depth += 1;
+            }
+        }
+
         if input[pos..].starts_with("</") {
             let closing_tag_pos = pos;
             let mut pos = pos + 2;
@@ -502,7 +524,10 @@ fn find_closing(input: &str, name: &str, mut pos: usize) -> Result<(usize, usize
                 skip_whitespace(input, &mut pos);
 
                 if input[pos..].starts_with(">") {
-                    return Ok((pos, closing_tag_pos));
+                    if depth == 0 {
+                        return Ok((pos, closing_tag_pos));
+                    }
+                    depth -= 1;
                 }
             }
         }

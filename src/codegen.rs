@@ -1,10 +1,16 @@
-use std::{ops::DerefMut, sync::atomic::Ordering};
+use std::{collections::HashMap, ops::DerefMut, sync::atomic::Ordering};
 
 use crate::{
-    css::{Rule, Selector}, js_component_scoping::ComponentVariableRenamer, utils::find_and_replace_js_identifiers, Attribute, ClassList, Component, Element, Id, JSExpression, Node, ReactiveAttribute, ScriptTag, StaticAttribute, ID_COUNTER
+    css::{Rule, Selector},
+    js_component_scoping::ComponentVariableRenamer,
+    utils::find_and_replace_js_identifiers,
+    Attribute, ClassList, Component, Element, Id, JSExpression, Node, ReactiveAttribute, ScriptTag,
+    StaticAttribute, ID_COUNTER,
 };
 
 type CVR = ComponentVariableRenamer;
+
+type CodegenResult = Result<String, String>;
 
 enum CodegenType {
     HTML,
@@ -20,19 +26,23 @@ impl CodegenType {
     }
 }
 
+/// Recursive rename map
+type RRM = HashMap<String, JSExpression>;
+
 impl Node {
-    pub fn full_codegen(&self) -> String {
+    pub fn full_codegen(&self) -> Result<String, String> {
         let mut root_cvr = CVR::new(&"root".to_string());
+        let rrm = RRM::new();
 
         let _type = CodegenType::HTML;
 
-        self.codegen(&_type, &root_cvr)
+        Ok(self.codegen(&_type, &root_cvr, rrm)?)
     }
 
-    fn codegen(&self, _type: &CodegenType, cvr: &CVR) -> String {
-        match self {
-            Node::Component(c) => c.codegen(_type, cvr),
-            Node::Element(e) => e.codegen(_type, cvr),
+    fn codegen(&self, _type: &CodegenType, cvr: &CVR, rrm: RRM) -> CodegenResult {
+        Ok(match self {
+            Node::Component(c) => c.codegen(_type, cvr, rrm)?,
+            Node::Element(e) => e.codegen(_type, cvr, rrm)?,
             Node::Text(t) => match _type {
                 CodegenType::HTML { .. } => t.clone(),
                 CodegenType::JSDom {
@@ -62,15 +72,23 @@ impl Node {
                 children,
                 _type,
                 cvr,
-            ),
+                rrm,
+            )?,
             Node::ConditionalElements {
                 condition,
                 children,
-            } => conditional_elements_codegen(condition, children, _type, cvr),
-            Node::ComponentHole { .. } => panic!("Component was not replaced."),
-            Node::ScriptTag(st) => st.codegen(_type, cvr),
-            Node::StyleTag(_) => unreachable!(), 
-        }
+            } => conditional_elements_codegen(condition, children, _type, cvr, rrm)?,
+            Node::ComponentHole { name, props, .. } => {
+                if let Some(create_fn_name) = rrm.get(name) {
+                    let props_set = codegen_props_set(&props, cvr);
+                    format!("{{ {props_set};\n {create_fn_name}(props); }}")
+                } else {
+                    panic!();
+                }
+            }
+            Node::ScriptTag(st) => st.codegen(_type, cvr, rrm)?,
+            Node::StyleTag(_) => unreachable!(),
+        })
     }
 }
 
@@ -91,13 +109,13 @@ fn script_tag_to_element(tag: &ScriptTag, var_renamer: &CVR) -> Element {
 }
 
 impl ScriptTag {
-    fn codegen(&self, _type: &CodegenType, cvr: &CVR) -> String {
-        match _type {
-            CodegenType::HTML => script_tag_to_element(self, cvr).codegen(_type, cvr),
+    fn codegen(&self, _type: &CodegenType, cvr: &CVR, rrm: RRM) -> CodegenResult {
+        Ok(match _type {
+            CodegenType::HTML => script_tag_to_element(self, cvr).codegen(_type, cvr, rrm)?,
             CodegenType::JSDom { .. } => {
                 format!("{};\n", self.code.clone())
             }
-        }
+        })
     }
 }
 
@@ -112,16 +130,16 @@ fn has_reactive_attributes(attrs: &Vec<Attribute>) -> bool {
 }
 
 impl Element {
-    fn codegen(&self, _type: &CodegenType, cvr: &CVR) -> String {
-        match _type {
-            CodegenType::HTML => self.html_codegen(_type, cvr),
+    fn codegen(&self, _type: &CodegenType, cvr: &CVR, rrm: RRM) -> Result<String, String> {
+        Ok(match _type {
+            CodegenType::HTML => self.html_codegen(_type, cvr, rrm)?,
             CodegenType::JSDom {
                 parent_elem_var_name,
-            } => self.jsdom_codegen(parent_elem_var_name, _type, cvr),
-        }
+            } => self.jsdom_codegen(parent_elem_var_name, _type, cvr, rrm)?,
+        })
     }
 
-    fn html_codegen(&self, _type: &CodegenType, cvr: &CVR) -> String {
+    fn html_codegen(&self, _type: &CodegenType, cvr: &CVR, rrm: RRM) -> CodegenResult {
         assert!(_type.is_html());
 
         if has_reactive_attributes(&self.attributes)
@@ -137,15 +155,15 @@ impl Element {
                 ID_COUNTER.fetch_add(1, Ordering::SeqCst)
             );
             let id = format!("r{}", ID_COUNTER.fetch_add(1, Ordering::SeqCst));
-            let js = self.jsdom_codegen(&elem_var_name, _type, cvr);
+            let js = self.jsdom_codegen(&elem_var_name, _type, cvr, rrm)?;
 
-            return format!(
+            return Ok(format!(
                 "<span id=\"{id}\"></span>
                 <script>
                     const {elem_var_name} = document.getElementById(\"{id}\");
                     {js}
                 </script>",
-            );
+            ));
         }
 
         let mut code = format!("<{}", self.name);
@@ -185,11 +203,11 @@ impl Element {
         }
         code.push('>');
         for child in &self.children {
-            code.push_str(&child.codegen(_type, cvr));
+            code.push_str(&child.codegen(_type, cvr, rrm.clone())?);
         }
         code.push_str(&format!("</{}>", self.name));
 
-        code
+        Ok(code)
     }
 
     fn jsdom_codegen(
@@ -197,7 +215,8 @@ impl Element {
         parent_elem_var_name: &String,
         _type: &CodegenType,
         cvr: &CVR,
-    ) -> String {
+        rrm: RRM,
+    ) -> CodegenResult {
         let elem_var_name = format!("__elem{}", ID_COUNTER.fetch_add(1, Ordering::SeqCst));
 
         let mut code = format!(
@@ -256,7 +275,7 @@ impl Element {
         };
 
         for child in &self.children {
-            code.push_str(&child.codegen(&_type, cvr));
+            code.push_str(&child.codegen(&_type, cvr, rrm.clone())?);
         }
 
         code.push_str(&format!(
@@ -264,7 +283,7 @@ impl Element {
             parent_elem_var_name, elem_var_name
         ));
 
-        code
+        Ok(code)
     }
 }
 
@@ -376,33 +395,53 @@ fn handle_special_attr(
     false
 }
 
+fn codegen_props_set(props: &Vec<Attribute>, cvr: &CVR) -> JSExpression {
+    if props.is_empty() {
+        return "".to_string();
+    }
+    
+    let sets = props
+        .iter()
+        .map(|p| match p {
+            Attribute::Static(StaticAttribute { name, value }) => {
+                format!("props.{} = \"{}\";", name, value)
+            }
+            Attribute::Reactive(ReactiveAttribute { name, value }) => {
+                let mut expr = value.to_string();
+
+                expr = cvr.process_no_declared(&expr);
+
+                format!("props.{} = {};", name, expr)
+            }
+        })
+        .collect::<Vec<String>>()
+        .join("\n");
+
+    format!("const props = {{}};\n{sets}\n") 
+}
+
 impl Component {
-    fn codegen(&self, _type: &CodegenType, cvr: &CVR) -> String {
+    fn codegen(&self, _type: &CodegenType, cvr: &CVR, mut rrm: RRM) -> CodegenResult {
+        if self.recursive && _type.is_html() {
+            return Err(format!(
+                "Recursive component {} in non-conditional context.",
+                self.name
+            ));
+        }
+
+        let create_fn_name = format!(
+            "__create{}{}",
+            self.name,
+            ID_COUNTER.fetch_add(1, Ordering::SeqCst)
+        );
+
+        if self.recursive {
+            rrm.insert(self.name.clone(), create_fn_name.clone());
+        }
+
+        let mut props_set = codegen_props_set(&self.props, cvr);
+
         let child_cvr = CVR::new(&self.name);
-
-        let props_set = self
-            .props
-            .iter()
-            .map(|p| match p {
-                Attribute::Static(StaticAttribute { name, value }) => {
-                    format!("props.{} = \"{}\";", name, value)
-                }
-                Attribute::Reactive(ReactiveAttribute { name, value }) => {
-                    let mut expr = value.to_string();
-
-                    expr = cvr.process_no_declared(&expr);
-
-                    format!("props.{} = {};", name, expr)
-                }
-            })
-            .collect::<Vec<String>>()
-            .join("\n");
-
-        let mut props_set = if props_set.is_empty() {
-            "".to_string()
-        } else {
-            format!("const props = {{}};\n{}", props_set)
-        };
 
         if _type.is_html() {
             props_set = child_cvr.process(&props_set);
@@ -411,10 +450,10 @@ impl Component {
         let inner: String = self
             .children
             .iter()
-            .map(|c| c.codegen(_type, &child_cvr))
-            .collect();
+            .map(|c| c.codegen(_type, &child_cvr, rrm.clone()))
+            .collect::<CodegenResult>()?;
 
-        match _type {
+        Ok(match _type {
             CodegenType::HTML { .. } => {
                 if props_set.is_empty() {
                     inner
@@ -423,14 +462,23 @@ impl Component {
                 }
             }
             CodegenType::JSDom { .. } => {
-                format!(
-                    "{{\n
-                    {}
-                    {}}}\n",
-                    props_set, inner
-                )
+                if self.recursive {
+                    format!(
+                        "
+                        const {create_fn_name} = (props) => {{
+                            {inner}
+                        }};
+                        {{
+                            {props_set};
+                            {create_fn_name}(props);
+                        }}
+                        "
+                    )
+                } else {
+                    format!("{{\n{props_set};{inner}}}\n")
+                }
             }
-        }
+        })
     }
 }
 
@@ -517,7 +565,8 @@ fn conditional_elements_codegen(
     children: &[Node],
     _type: &CodegenType,
     cvr: &CVR,
-) -> String {
+    rrm: RRM,
+) -> CodegenResult {
     let id = format!("r{}", ID_COUNTER.fetch_add(1, Ordering::SeqCst));
     let elem_var_name = format!("__elem{}", ID_COUNTER.fetch_add(1, Ordering::SeqCst));
 
@@ -527,8 +576,8 @@ fn conditional_elements_codegen(
 
     let children = children
         .iter()
-        .map(|c| c.codegen(&child_type, cvr))
-        .collect::<String>();
+        .map(|c| c.codegen(&child_type, cvr, rrm.clone()))
+        .collect::<CodegenResult>()?;
 
     let func = format!(
         "const {id}cond = (c) => {{
@@ -540,7 +589,7 @@ fn conditional_elements_codegen(
     }};"
     );
 
-    match _type {
+    Ok(match _type {
         CodegenType::HTML => {
             let r = reactive_expression(condition, &format!("{}cond", id), cvr);
 
@@ -568,7 +617,7 @@ const {elem_var_name} = document.createElement(\"span\");
 "
             )
         }
-    }
+    })
 }
 
 fn loop_codegen(
@@ -578,7 +627,8 @@ fn loop_codegen(
     children: &[Node],
     _type: &CodegenType,
     cvr: &CVR,
-) -> String {
+    rrm: RRM,
+) -> CodegenResult {
     let id = format!("r{}", ID_COUNTER.fetch_add(1, Ordering::SeqCst));
     let elem_var_name = format!("__elem{}", ID_COUNTER.fetch_add(1, Ordering::SeqCst));
 
@@ -594,12 +644,12 @@ fn loop_codegen(
             attributes: vec![],
             children: children.to_vec(),
         })
-        .codegen(&child_type, cvr)
+        .codegen(&child_type, cvr, rrm)?
     } else {
         children
             .into_iter()
-            .map(|c| c.codegen(&child_type, cvr))
-            .collect::<String>()
+            .map(|c| c.codegen(&child_type, cvr, rrm.clone()))
+            .collect::<CodegenResult>()?
     };
 
     let func = format!(
@@ -616,7 +666,7 @@ fn loop_codegen(
         let list = cvr.process_no_declared(&iteratable);
         format!(
             "
-            const add = (value, position) => {{
+            {list}.subscribeAdd((value, position) => {{
                 const {iterator_variable} = value;
                 let wrapper_span = undefined;
                 {{
@@ -629,14 +679,11 @@ fn loop_codegen(
                 }} else {{
                     {elem_var_name}.insertBefore(wrapper_span, {elem_var_name}.childNodes[position]);
                 }}
-            }};
+            }});
 
-            const remove = (position) => {{
+            {list}.subscribeRemove((position) => {{
                 {elem_var_name}.removeChild({elem_var_name}.childNodes[position]);
-            }};
-
-            {list}.subscribeAdd(add);
-            {list}.subscribeRemove(remove);
+            }});
 
             {id}loop({list}.value);
         ",
@@ -645,7 +692,7 @@ fn loop_codegen(
         reactive_expression(iteratable, &format!("{}loop", id), cvr)
     };
 
-    match _type {
+    Ok(match _type {
         CodegenType::HTML => {
             format!(
                 "<span id=\"{id}\"></span>
@@ -669,7 +716,7 @@ fn loop_codegen(
                 "
             )
         }
-    }
+    })
 }
 
 pub fn codegen_stylesheet(ss: &Vec<Rule>) -> String {

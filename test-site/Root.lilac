@@ -8,6 +8,9 @@
     const add = () => {
 	if (text.value.length == 0) return;
 
+	posts.push({name: "hi", date: Date.now(), content: text.value})
+
+
 	list.push([key++, text.value]);
 	text.set(() => "");
     }
@@ -16,6 +19,10 @@
 	list.findAndRemove(([k, _]) => k === key);
     }
 
+
+    const posts = lstate([{name: "jasper", date: 20, content: "YAAAAAY"},
+    {name: "jasper", date: 99999, content: "UMM"}
+    ]);
 </script>
 
 
@@ -37,6 +44,10 @@
     <ListItem name={i[1]} delete={() => remove(i[0]) } />
 {/for}
 </ul>
+
+{#for post in $lstate posts}
+<Post post={post} />
+{/for}
 
 <style>
     #bl {

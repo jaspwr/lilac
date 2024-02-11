@@ -58,7 +58,7 @@ fn compile(job: &Job) -> Result<(), String> {
         include_str!("../prelude.js"),
         get_root_css(&job.path)?,
         codegen_stylesheet(&stylesheet),
-        root_node.full_codegen()
+        root_node.full_codegen()?
     );
 
     // println!("{}", code);

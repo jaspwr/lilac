@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc, sync::atomic::Ordering};
+use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::atomic::Ordering};
 
 use ress::tokens::Token;
 

@@ -1,0 +1,31 @@
+<script>
+    let call_depth = props.call_depth || 0;
+</script>
+
+<div id="container">
+    <span id="name">{props.post.name}</span> @ 
+    <span id="date">{new Date(props.post.date).toString()}</span>
+    <div id="content">
+	{props.post.content}
+    </div>
+
+    {#if call_depth < 20}
+    <Post post={{name:"jasper", date: 2, content: "HAAHASHDAHSJDHA"}} call_depth={call_depth + 1} />
+    {/if}
+</div>
+
+<style>
+    #name {
+	font-weight: bold;
+    }
+   
+    #container {
+	border: solid 1px white;
+	padding: 1rem;
+	margin: 1rem;
+    }
+
+    #content {
+	margin-top: 1rem;
+    }
+</style>
