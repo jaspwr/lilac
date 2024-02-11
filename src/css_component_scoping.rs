@@ -1,12 +1,15 @@
 use crate::{css::*, utils::children_of, ClassList, Component, Element, Id, Node};
 
-pub fn scope_css_to_component(mut component: Component, mut styles: StyleSheet) -> (StyleSheet, Component) {
+pub fn scope_css_to_component(
+    mut component: Component,
+    mut styles: StyleSheet,
+) -> (StyleSheet, Component) {
     let prefix = &format!("-{}-", component.name.clone());
 
     let mut node = Node::Component(component);
-    let (ids, classes, tags) = handle_css(&mut styles, prefix);
+    let (ids, classes, tags, all) = handle_css(&mut styles, prefix);
 
-    replace_refs(&mut node, prefix, &ids, &classes, &tags);
+    replace_refs(&mut node, prefix, &ids, &classes, &tags, all);
 
     let component = match node {
         Node::Component(c) => c,
@@ -42,8 +45,8 @@ fn replace_refs(
     ids: &Vec<String>,
     classes: &Vec<String>,
     tags: &Vec<String>,
+    all: bool,
 ) {
-    println!("{:#?}", classes);
     if let Node::Element(e) = node {
         if let Some(id) = &mut e.id {
             match id {
@@ -85,19 +88,24 @@ fn replace_refs(
         if tags.contains(&e.name) {
             add_class(e, format!("tag{}{}", prefix, e.name));
         }
+
+        if all {
+            add_class(e, format!("all{}", prefix));
+        }
     }
 
     if let Some(children) = children_of(node) {
         for node in children {
-            replace_refs(node, prefix, ids, classes, tags);
+            replace_refs(node, prefix, ids, classes, tags, all);
         }
     }
 }
 
-fn handle_css(css: &mut StyleSheet, prefix: &str) -> (Vec<String>, Vec<String>, Vec<String>) {
+fn handle_css(css: &mut StyleSheet, prefix: &str) -> (Vec<String>, Vec<String>, Vec<String>, bool) {
     let mut ids = vec![];
     let mut classes = vec![];
     let mut tags = vec![];
+    let mut all = false;
 
     for rule in css {
         if let Selector::Tag(t) = &mut rule.selector {
@@ -109,8 +117,11 @@ fn handle_css(css: &mut StyleSheet, prefix: &str) -> (Vec<String>, Vec<String>, 
         } else if let Selector::ID(id) = &mut rule.selector {
             ids.push(id.clone());
             rule.selector = Selector::Class(format!("id{}{}", prefix, id));
+        } else if let Selector::All = rule.selector {
+            all = true;
+            rule.selector = Selector::Class(format!("all{}", prefix));
         }
     }
 
-    (ids, classes, tags)
+    (ids, classes, tags, all)
 }

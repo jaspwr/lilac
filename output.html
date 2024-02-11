@@ -93,7 +93,7 @@ const lstate = (initialState) => {
     background-color: black;
     color: white;
 }
-.class-ListItem-blue-text {color:purple;} .id-Post-name {font-weight:bold;} .id-Post-container {border:solid 1px white;padding:1rem;margin:1rem;} .id-Post-content {margin-top:1rem;} .id-Root-bl {font-size:30px;} .tag-Root-div {color:red;} .class-Root-blue-text {color:blue;} </style>
+.class-ListItem-blue-text {color:purple;} .all-Post- {background-color:gray;} .id-Post-name {font-weight:bold;} .id-Post-container {border:solid 1px white;padding:1rem;margin:1rem;} .id-Post-content {margin-top:1rem;} .id-Root-bl {font-size:30px;} .tag-Root-div {color:red;} .class-Root-blue-text {color:blue;} </style>
 <script>
     let __Root_2_text = state("");
 
@@ -120,7 +120,6 @@ const lstate = (initialState) => {
     {name: "jasper", date: 99999, content: "UMM"}
     ]);
 </script>
-
 
 
 
@@ -401,13 +400,13 @@ const __textNode41 = document.createTextNode(`
 __elem37.appendChild(__textNode41);
 const __elem42 = document.createElement("div");
 __elem42.id = "container";
-__elem42.className = "id-Post-container";
+__elem42.className = "id-Post-container all-Post-";
 const __textNode43 = document.createTextNode(`
     `);
 __elem42.appendChild(__textNode43);
 const __elem44 = document.createElement("span");
 __elem44.id = "name";
-__elem44.className = "id-Post-name";
+__elem44.className = "id-Post-name all-Post-";
 
     let __r45textNode = document.createTextNode(``);
     const __r45setTextNode = (text) => __r45textNode.nodeValue = text;
@@ -422,6 +421,7 @@ const __textNode46 = document.createTextNode(` @
 __elem42.appendChild(__textNode46);
 const __elem47 = document.createElement("span");
 __elem47.id = "date";
+__elem47.className = "all-Post-";
 
     let __r48textNode = document.createTextNode(``);
     const __r48setTextNode = (text) => __r48textNode.nodeValue = text;
@@ -436,7 +436,7 @@ const __textNode49 = document.createTextNode(`
 __elem42.appendChild(__textNode49);
 const __elem50 = document.createElement("div");
 __elem50.id = "content";
-__elem50.className = "id-Post-content";
+__elem50.className = "id-Post-content all-Post-";
 const __textNode51 = document.createTextNode(`
 	`);
 __elem50.appendChild(__textNode51);
@@ -463,7 +463,8 @@ const r55cond = (c) => {
     `);
 __elem56.appendChild(__textNode57);
 
-                        const __createPost58 = (props) => {
+                        const __createPost58 = (props, parent_elem) => {
+                            const __elem56 = parent_elem;
                             
     let call_depth = props.call_depth || 0;
 ;
@@ -473,13 +474,13 @@ const __textNode60 = document.createTextNode(`
 __elem56.appendChild(__textNode60);
 const __elem61 = document.createElement("div");
 __elem61.id = "container";
-__elem61.className = "id-Post-container";
+__elem61.className = "id-Post-container all-Post-";
 const __textNode62 = document.createTextNode(`
     `);
 __elem61.appendChild(__textNode62);
 const __elem63 = document.createElement("span");
 __elem63.id = "name";
-__elem63.className = "id-Post-name";
+__elem63.className = "id-Post-name all-Post-";
 
     let __r64textNode = document.createTextNode(``);
     const __r64setTextNode = (text) => __r64textNode.nodeValue = text;
@@ -494,6 +495,7 @@ const __textNode65 = document.createTextNode(` @
 __elem61.appendChild(__textNode65);
 const __elem66 = document.createElement("span");
 __elem66.id = "date";
+__elem66.className = "all-Post-";
 
     let __r67textNode = document.createTextNode(``);
     const __r67setTextNode = (text) => __r67textNode.nodeValue = text;
@@ -508,7 +510,7 @@ const __textNode68 = document.createTextNode(`
 __elem61.appendChild(__textNode68);
 const __elem69 = document.createElement("div");
 __elem69.id = "content";
-__elem69.className = "id-Post-content";
+__elem69.className = "id-Post-content all-Post-";
 const __textNode70 = document.createTextNode(`
 	`);
 __elem69.appendChild(__textNode70);
@@ -538,7 +540,7 @@ __elem75.appendChild(__textNode76);
 props.post = {name:"jasper", date: 2, content: "HAAHASHDAHSJDHA"};
 props.call_depth = call_depth + 1;
 ;
- __createPost58(props); }const __textNode77 = document.createTextNode(`
+ __createPost58(props, __elem75); }const __textNode77 = document.createTextNode(`
     `);
 __elem75.appendChild(__textNode77);
 
@@ -548,17 +550,20 @@ __elem75.appendChild(__textNode77);
     };
 
         
-        (r74cond)(call_depth < 20); 
+        (r74cond)(call_depth < 3); 
         
 __elem61.appendChild(__elem75);
+const __textNode78 = document.createTextNode(`    Hello
+`);
+__elem61.appendChild(__textNode78);
 __elem56.appendChild(__elem61);
-const __textNode78 = document.createTextNode(`
+const __textNode79 = document.createTextNode(`
 
 `);
-__elem56.appendChild(__textNode78);
-const __textNode79 = document.createTextNode(`
-`);
 __elem56.appendChild(__textNode79);
+const __textNode80 = document.createTextNode(`
+`);
+__elem56.appendChild(__textNode80);
 
                         };
                         {
@@ -566,11 +571,11 @@ __elem56.appendChild(__textNode79);
 props.post = {name:"jasper", date: 2, content: "HAAHASHDAHSJDHA"};
 props.call_depth = call_depth + 1;
 ;
-                            __createPost58(props);
+                            __createPost58(props, __elem56);
                         }
-                        const __textNode80 = document.createTextNode(`
+                        const __textNode81 = document.createTextNode(`
     `);
-__elem56.appendChild(__textNode80);
+__elem56.appendChild(__textNode81);
 
         } else {
             __elem56.innerHTML = "";
@@ -578,21 +583,24 @@ __elem56.appendChild(__textNode80);
     };
 
         
-        (r55cond)(call_depth < 20); 
+        (r55cond)(call_depth < 3); 
         
 __elem42.appendChild(__elem56);
+const __textNode82 = document.createTextNode(`    Hello
+`);
+__elem42.appendChild(__textNode82);
 __elem37.appendChild(__elem42);
-const __textNode81 = document.createTextNode(`
+const __textNode83 = document.createTextNode(`
 
 `);
-__elem37.appendChild(__textNode81);
-const __textNode82 = document.createTextNode(`
-`);
-__elem37.appendChild(__textNode82);
-}
-const __textNode83 = document.createTextNode(`
-`);
 __elem37.appendChild(__textNode83);
+const __textNode84 = document.createTextNode(`
+`);
+__elem37.appendChild(__textNode84);
+}
+const __textNode85 = document.createTextNode(`
+`);
+__elem37.appendChild(__textNode85);
 __elem36.appendChild(__elem37);
 
         }
@@ -619,13 +627,13 @@ const __textNode41 = document.createTextNode(`
 __elem37.appendChild(__textNode41);
 const __elem42 = document.createElement("div");
 __elem42.id = "container";
-__elem42.className = "id-Post-container";
+__elem42.className = "id-Post-container all-Post-";
 const __textNode43 = document.createTextNode(`
     `);
 __elem42.appendChild(__textNode43);
 const __elem44 = document.createElement("span");
 __elem44.id = "name";
-__elem44.className = "id-Post-name";
+__elem44.className = "id-Post-name all-Post-";
 
     let __r45textNode = document.createTextNode(``);
     const __r45setTextNode = (text) => __r45textNode.nodeValue = text;
@@ -640,6 +648,7 @@ const __textNode46 = document.createTextNode(` @
 __elem42.appendChild(__textNode46);
 const __elem47 = document.createElement("span");
 __elem47.id = "date";
+__elem47.className = "all-Post-";
 
     let __r48textNode = document.createTextNode(``);
     const __r48setTextNode = (text) => __r48textNode.nodeValue = text;
@@ -654,7 +663,7 @@ const __textNode49 = document.createTextNode(`
 __elem42.appendChild(__textNode49);
 const __elem50 = document.createElement("div");
 __elem50.id = "content";
-__elem50.className = "id-Post-content";
+__elem50.className = "id-Post-content all-Post-";
 const __textNode51 = document.createTextNode(`
 	`);
 __elem50.appendChild(__textNode51);
@@ -681,7 +690,8 @@ const r55cond = (c) => {
     `);
 __elem56.appendChild(__textNode57);
 
-                        const __createPost58 = (props) => {
+                        const __createPost58 = (props, parent_elem) => {
+                            const __elem56 = parent_elem;
                             
     let call_depth = props.call_depth || 0;
 ;
@@ -691,13 +701,13 @@ const __textNode60 = document.createTextNode(`
 __elem56.appendChild(__textNode60);
 const __elem61 = document.createElement("div");
 __elem61.id = "container";
-__elem61.className = "id-Post-container";
+__elem61.className = "id-Post-container all-Post-";
 const __textNode62 = document.createTextNode(`
     `);
 __elem61.appendChild(__textNode62);
 const __elem63 = document.createElement("span");
 __elem63.id = "name";
-__elem63.className = "id-Post-name";
+__elem63.className = "id-Post-name all-Post-";
 
     let __r64textNode = document.createTextNode(``);
     const __r64setTextNode = (text) => __r64textNode.nodeValue = text;
@@ -712,6 +722,7 @@ const __textNode65 = document.createTextNode(` @
 __elem61.appendChild(__textNode65);
 const __elem66 = document.createElement("span");
 __elem66.id = "date";
+__elem66.className = "all-Post-";
 
     let __r67textNode = document.createTextNode(``);
     const __r67setTextNode = (text) => __r67textNode.nodeValue = text;
@@ -726,7 +737,7 @@ const __textNode68 = document.createTextNode(`
 __elem61.appendChild(__textNode68);
 const __elem69 = document.createElement("div");
 __elem69.id = "content";
-__elem69.className = "id-Post-content";
+__elem69.className = "id-Post-content all-Post-";
 const __textNode70 = document.createTextNode(`
 	`);
 __elem69.appendChild(__textNode70);
@@ -756,7 +767,7 @@ __elem75.appendChild(__textNode76);
 props.post = {name:"jasper", date: 2, content: "HAAHASHDAHSJDHA"};
 props.call_depth = call_depth + 1;
 ;
- __createPost58(props); }const __textNode77 = document.createTextNode(`
+ __createPost58(props, __elem75); }const __textNode77 = document.createTextNode(`
     `);
 __elem75.appendChild(__textNode77);
 
@@ -766,17 +777,20 @@ __elem75.appendChild(__textNode77);
     };
 
         
-        (r74cond)(call_depth < 20); 
+        (r74cond)(call_depth < 3); 
         
 __elem61.appendChild(__elem75);
+const __textNode78 = document.createTextNode(`    Hello
+`);
+__elem61.appendChild(__textNode78);
 __elem56.appendChild(__elem61);
-const __textNode78 = document.createTextNode(`
+const __textNode79 = document.createTextNode(`
 
 `);
-__elem56.appendChild(__textNode78);
-const __textNode79 = document.createTextNode(`
-`);
 __elem56.appendChild(__textNode79);
+const __textNode80 = document.createTextNode(`
+`);
+__elem56.appendChild(__textNode80);
 
                         };
                         {
@@ -784,11 +798,11 @@ __elem56.appendChild(__textNode79);
 props.post = {name:"jasper", date: 2, content: "HAAHASHDAHSJDHA"};
 props.call_depth = call_depth + 1;
 ;
-                            __createPost58(props);
+                            __createPost58(props, __elem56);
                         }
-                        const __textNode80 = document.createTextNode(`
+                        const __textNode81 = document.createTextNode(`
     `);
-__elem56.appendChild(__textNode80);
+__elem56.appendChild(__textNode81);
 
         } else {
             __elem56.innerHTML = "";
@@ -796,21 +810,24 @@ __elem56.appendChild(__textNode80);
     };
 
         
-        (r55cond)(call_depth < 20); 
+        (r55cond)(call_depth < 3); 
         
 __elem42.appendChild(__elem56);
+const __textNode82 = document.createTextNode(`    Hello
+`);
+__elem42.appendChild(__textNode82);
 __elem37.appendChild(__elem42);
-const __textNode81 = document.createTextNode(`
+const __textNode83 = document.createTextNode(`
 
 `);
-__elem37.appendChild(__textNode81);
-const __textNode82 = document.createTextNode(`
-`);
-__elem37.appendChild(__textNode82);
-}
-const __textNode83 = document.createTextNode(`
-`);
 __elem37.appendChild(__textNode83);
+const __textNode84 = document.createTextNode(`
+`);
+__elem37.appendChild(__textNode84);
+}
+const __textNode85 = document.createTextNode(`
+`);
+__elem37.appendChild(__textNode85);
 __elem36.appendChild(__elem37);
 
                     wrapper_span = __elem36;

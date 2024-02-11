@@ -12,9 +12,14 @@
     {#if call_depth < 3}
     <Post post={{name:"jasper", date: 2, content: "HAAHASHDAHSJDHA"}} call_depth={call_depth + 1} />
     {/if}
+    Hello
 </div>
 
 <style>
+    * {
+	background-color: gray;
+    }
+
     #name {
 	font-weight: bold;
     }

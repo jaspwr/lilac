@@ -1,5 +1,7 @@
 use std::{collections::HashMap, ops::DerefMut, sync::atomic::Ordering};
 
+use owo_colors::colors::xterm::PompadourMagenta;
+
 use crate::{
     css::{Rule, Selector},
     js_component_scoping::ComponentVariableRenamer,
@@ -81,7 +83,13 @@ impl Node {
             Node::ComponentHole { name, props, .. } => {
                 if let Some(create_fn_name) = rrm.get(name) {
                     let props_set = codegen_props_set(&props, cvr);
-                    format!("{{ {props_set};\n {create_fn_name}(props); }}")
+
+                    let parent_elem_var_name = match _type {
+                        CodegenType::JSDom { parent_elem_var_name } => parent_elem_var_name,
+                        _ => panic!(),
+                    };
+
+                    format!("{{ {props_set};\n {create_fn_name}(props, {parent_elem_var_name}); }}")
                 } else {
                     panic!();
                 }
@@ -461,16 +469,17 @@ impl Component {
                     format!("<script>\n{props_set}\n</script>\n{inner}")
                 }
             }
-            CodegenType::JSDom { .. } => {
+            CodegenType::JSDom { parent_elem_var_name } => {
                 if self.recursive {
                     format!(
                         "
-                        const {create_fn_name} = (props) => {{
+                        const {create_fn_name} = (props, parent_elem) => {{
+                            const {parent_elem_var_name} = parent_elem;
                             {inner}
                         }};
                         {{
                             {props_set};
-                            {create_fn_name}(props);
+                            {create_fn_name}(props, {parent_elem_var_name});
                         }}
                         "
                     )
