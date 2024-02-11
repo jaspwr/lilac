@@ -9,7 +9,7 @@
 	{props.post.content}
     </div>
 
-    {#if call_depth < 20}
+    {#if call_depth < 3}
     <Post post={{name:"jasper", date: 2, content: "HAAHASHDAHSJDHA"}} call_depth={call_depth + 1} />
     {/if}
 </div>
