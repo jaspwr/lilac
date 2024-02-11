@@ -53,7 +53,6 @@ fn replace_refs(
                 Id::Static(s) => {
                     if ids.contains(s) {
                         let class = format!("id{}{}", prefix, s);
-                        println!("Adding class {}", class);
                         add_class(e, class);
                     }
                 }

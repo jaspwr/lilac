@@ -8,7 +8,7 @@
     const add = () => {
 	if (text.value.length == 0) return;
 
-	posts.push({name: "hi", date: Date.now(), content: text.value})
+	posts.push({name: "hi", date: Date.now(), content: text.value, replies: lstate([])})
 
 
 	list.push([key++, text.value]);
@@ -20,8 +20,8 @@
     }
 
 
-    const posts = lstate([{name: "jasper", date: 20, content: "YAAAAAY"},
-    {name: "jasper", date: 99999, content: "UMM"}
+    const posts = lstate([{name: "jasper", date: 20, content: "YAAAAAY", replies: lstate([])},
+    {name: "jasper", date: 99999, content: "UMM", replies: lstate([{name: "poop", date: 0, content: "asd", replies: lstate([])}])}
     ]);
 </script>
 

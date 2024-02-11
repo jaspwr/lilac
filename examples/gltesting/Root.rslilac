@@ -1,0 +1,11 @@
+<script>
+    let count: Reactive<i32> = Reactive::new(1);
+
+    let count_cpy = count.clone()
+    let add = move || count_cpy += 1;
+</script>
+
+{$count}
+
+<button onclick={add}>Add one</button>
+

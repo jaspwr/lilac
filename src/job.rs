@@ -3,12 +3,20 @@ use std::{collections::HashMap, path::PathBuf};
 use owo_colors::OwoColorize;
 
 use crate::{
-    codegen::codegen_stylesheet, compile::fill_holes, css::StyleSheet, css_component_scoping::scope_css_to_component, parse::parse_full, utils::children_of, Component, Node
+    compile::fill_holes, css::StyleSheet, css_component_scoping::scope_css_to_component,
+    js_codegen::codegen_stylesheet, parse::parse_full, utils::children_of, Component, Dialect,
+    Node,
 };
 
 pub struct Job {
     pub path: PathBuf,
     pub output: PathBuf,
+}
+
+pub enum Target {
+    Unknown,
+    Web,
+    GL,
 }
 
 impl Job {
@@ -29,12 +37,19 @@ fn compile(job: &Job) -> Result<(), String> {
 
     for path in files {
         let component = load_componet(path).map_err(|e| e.to_string())?;
-       
+
         let (styles, component) = collect_css(component);
-        
+
         let (styles, component) = scope_css_to_component(component, styles);
 
         stylesheet.extend(styles);
+
+        if let Some(_) = components_map.get(&component.name) {
+            return Err(format!(
+                "Conflicting definitions for component '{}'.",
+                component.name
+            ));
+        }
 
         components_map.insert(component.name.clone(), component);
     }
@@ -43,6 +58,12 @@ fn compile(job: &Job) -> Result<(), String> {
         .get("Root")
         .ok_or("No root component found.".to_string())?
         .clone();
+
+    let target = match root.dialect {
+        Dialect::JsLilac => Target::Web,
+        Dialect::TsLilac => Target::Web,
+        Dialect::RsLilac => Target::GL,
+    };
 
     let mut root_node = Node::Component(root.clone());
 
@@ -58,7 +79,7 @@ fn compile(job: &Job) -> Result<(), String> {
         include_str!("../prelude.js"),
         get_root_css(&job.path)?,
         codegen_stylesheet(&stylesheet),
-        root_node.full_codegen()?
+        root_node.codegen(target)?
     );
 
     // println!("{}", code);
@@ -79,10 +100,14 @@ fn write_file(path: &PathBuf, contents: &str) -> Result<(), std::io::Error> {
 fn list_files(path: &PathBuf) -> Result<Vec<PathBuf>, std::io::Error> {
     let mut files = vec![];
 
+    const EXTENSIONS: [&str; 4] = ["lilac", "rslilac", "tslilac", "jslilac"];
+
     for entry in std::fs::read_dir(path)? {
         let entry = entry?;
         let path = entry.path();
-        if path.extension().map_or(false, |e| e == "lilac") {
+        if path.extension().map_or(false, |e| {
+            EXTENSIONS.contains(&e.to_str().unwrap_or_default())
+        }) {
             files.push(path.clone());
         }
 
@@ -130,7 +155,6 @@ fn _collect_css(node: &mut Node) -> StyleSheet {
             }
         }
     }
-
     ss
 }
 
@@ -139,5 +163,18 @@ fn load_componet(path: PathBuf) -> Result<Component, String> {
 
     let name = path.file_stem().unwrap().to_str().unwrap();
 
-    parse_full(&contents, name).map_err(|err| err.format(&contents))
+    let dialect = match path
+        .extension()
+        .unwrap_or_default()
+        .to_str()
+        .unwrap_or_default()
+    {
+        "lilac" => Dialect::JsLilac,
+        "jslilac" => Dialect::JsLilac,
+        "tslilac" => Dialect::TsLilac,
+        "rslilac" => Dialect::RsLilac,
+        _ => unreachable!(),
+    };
+
+    parse_full(&contents, name, dialect).map_err(|err| err.format(&contents))
 }

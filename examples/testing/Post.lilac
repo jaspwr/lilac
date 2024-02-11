@@ -1,7 +1,3 @@
-<script>
-    let call_depth = props.call_depth || 0;
-</script>
-
 <div id="container">
     <span id="name">{props.post.name}</span> @ 
     <span id="date">{new Date(props.post.date).toString()}</span>
@@ -9,10 +5,9 @@
 	{props.post.content}
     </div>
 
-    {#if call_depth < 3}
-    <Post post={{name:"jasper", date: 2, content: "HAAHASHDAHSJDHA"}} call_depth={call_depth + 1} />
-    {/if}
-    Hello
+    {#for reply in $lstate props.post.replies}
+	<Post post={reply} />
+    {/for}
 </div>
 
 <style>

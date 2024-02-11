@@ -8,7 +8,7 @@ const assert = (condition, message) => {
     if (__RELEASE === true) return;
 
     if (!condition) {
-    	throw new Error(message);
+    	throw new Error(`[Lilac failed assert] ${message}`);
     }
 }
 
@@ -39,6 +39,7 @@ const lstate = (initialState) => {
     assert(Array.isArray(initialState), "Initial value of lstate must be an array");
 
     const lstate = {
+	__STATE: true,
 	__LSTATE: true,
 	value: initialState,
 	subscriptions: new Map(),

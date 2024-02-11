@@ -59,8 +59,6 @@ fn get_declared_js_identifiers(expr: &JSExpression) -> Vec<String> {
 
     for item in ress::Scanner::new(&expr) {
         if let Ok(item) = item {
-            println!("{:?}", item.token);
-
             if item.token.is_ident() {
                 if let Some(ref prev) = previous {
                     if let Token::Keyword(kw) = prev {

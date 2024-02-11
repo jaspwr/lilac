@@ -2,13 +2,14 @@ use std::string::ParseError;
 
 use owo_colors::OwoColorize;
 
-use crate::{Attribute, ClassList, Component, Element, Id, Node};
+use crate::{Attribute, ClassList, Component, Dialect, Element, Id, Node};
 
-pub fn parse_full(input: &str, component_name: &str) -> Result<Component, CompilerError> {
+pub fn parse_full(input: &str, component_name: &str, dialect: Dialect) -> Result<Component, CompilerError> {
     let children = parse(input, 0, input.len())?;
 
     Ok(Component {
         name: component_name.to_string(),
+        dialect,
         props: vec![],
         children,
         recursive: false,
@@ -254,8 +255,6 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
 
     let name = grab_alphanum_token(input, pos);
 
-    println!("{}", &input[*pos..]);
-
     if name.is_empty() {
         return Err(CompilerError {
             position: *pos,
@@ -351,7 +350,6 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
             }
 
             if value.starts_with("\"") {
-                println!("VALUE: {}", value);
                 if !value.ends_with("\"") && value.len() > 1 {
                     if value.ends_with(",") {
                         return Err(CompilerError {
@@ -435,8 +433,6 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
             position: e.location + opening_tag_end,
             message: format!("{}: {}", "CSS syntax error".red(), e.message),
         })?;
-        println!("AAA {:#?}", css);
-
         return Ok(Node::StyleTag(css));
     }
 

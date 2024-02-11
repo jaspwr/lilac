@@ -1,10 +1,13 @@
 use std::{collections::HashMap, path::PathBuf, sync::atomic::AtomicUsize, usize};
 
 use css::StyleSheet;
+use job::Target;
 use parse::{parse_full, CompilerError};
 
 pub static ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
+mod js_codegen;
+mod rs_codegen;
 mod codegen;
 mod css_component_scoping;
 mod js_component_scoping;
@@ -164,9 +167,17 @@ pub struct ReactiveAttribute {
     value: JSExpression,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Dialect {
+    JsLilac,
+    TsLilac,
+    RsLilac,
+}
+
 #[derive(Debug, Clone)]
 pub struct Component {
     name: String,
+    dialect: Dialect,
     props: Vec<Attribute>,
     children: Vec<Node>,
     /// If the component instance is a child of the same component
