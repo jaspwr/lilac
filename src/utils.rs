@@ -1,4 +1,6 @@
-use crate::{JSExpression, Node};
+use std::sync::atomic::Ordering;
+
+use crate::{JSExpression, Node, ID_COUNTER};
 
 pub fn find_and_replace_js_identifiers(
     expr: &JSExpression,
@@ -45,3 +47,23 @@ pub fn children_of<'a>(node: &'a mut Node) -> Option<&'a mut Vec<Node>> {
     }
 }
 
+pub fn uid() -> String {
+    format!("{}", ID_COUNTER.fetch_add(1, Ordering::SeqCst))
+}
+
+pub fn filter_whitespace_nodes(node: &mut Node) {
+    if let Some(children) = children_of(node) {
+        children.retain(|child| match child {
+            Node::Text(t) => !is_all_whitespace(t),
+            _ => true,
+        });
+
+        for child in children {
+            filter_whitespace_nodes(child);
+        }
+    }
+}
+
+pub fn is_all_whitespace(s: &str) -> bool {
+    s.chars().all(|c| c.is_whitespace())
+}

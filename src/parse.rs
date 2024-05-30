@@ -4,7 +4,11 @@ use owo_colors::OwoColorize;
 
 use crate::{Attribute, ClassList, Component, Dialect, Element, Id, Node};
 
-pub fn parse_full(input: &str, component_name: &str, dialect: Dialect) -> Result<Component, CompilerError> {
+pub fn parse_full(
+    input: &str,
+    component_name: &str,
+    dialect: Dialect,
+) -> Result<Component, CompilerError> {
     let children = parse(input, 0, input.len())?;
 
     Ok(Component {
@@ -272,30 +276,12 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
 
     let mut attr_context = AttrParsingContext::None;
 
+    let mut depth = 0;
+
     while *pos < input.len()
         && !(attr_context == AttrParsingContext::None && input[*pos..].starts_with(">"))
     {
         let c = input[*pos..].chars().next().unwrap();
-
-        match attr_context {
-            AttrParsingContext::None => {
-                if c == '"' {
-                    attr_context = AttrParsingContext::Quotes;
-                } else if c == '{' {
-                    attr_context = AttrParsingContext::Curly;
-                }
-            }
-            AttrParsingContext::Quotes => {
-                if c == '"' {
-                    attr_context = AttrParsingContext::None;
-                }
-            }
-            AttrParsingContext::Curly => {
-                if c == '}' {
-                    attr_context = AttrParsingContext::None;
-                }
-            }
-        }
 
         if attr_context == AttrParsingContext::None {
             if (c.is_whitespace() || c == '=') && !token.is_empty() {
@@ -307,18 +293,50 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
 
             let c = input[*pos..].chars().next().unwrap();
 
+            if c == '"' {
+                attr_context = AttrParsingContext::Quotes;
+            } else if c == '{' {
+                attr_context = AttrParsingContext::Curly;
+            }
+
             if input[*pos..].starts_with("/>") {
                 no_closer = true;
+                break;
+            }
+
+            if input[*pos..].starts_with(">") {
                 break;
             }
 
             if c == '=' {
                 unparsed_attributes.push("=".to_string());
             } else {
+                println!("{}", c);
                 token.push(c);
             }
         } else {
+            println!("{}", c);
             token.push(c);
+
+            match attr_context {
+                AttrParsingContext::None => {}
+                AttrParsingContext::Quotes => {
+                    if c == '"' {
+                        attr_context = AttrParsingContext::None;
+                    }
+                }
+                AttrParsingContext::Curly => {
+                    if c == '}' {
+                        if depth == 0 {
+                            attr_context = AttrParsingContext::None;
+                        } else {
+                            depth -= 1;
+                        }
+                    } else if c == '{' {
+                        depth += 1;
+                    }
+                }
+            }
         }
 
         *pos += 1;
@@ -329,6 +347,8 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
     }
 
     let mut attributes = vec![];
+
+    println!("{:?}", unparsed_attributes);
 
     if !unparsed_attributes.is_empty() {
         while !unparsed_attributes.is_empty() {
@@ -354,7 +374,8 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
                     if value.ends_with(",") {
                         return Err(CompilerError {
                             position: *pos,
-                            message: "Commas should not be used to separate attribute arguments".to_string(),
+                            message: "Commas should not be used to separate attribute arguments"
+                                .to_string(),
                         });
                     }
 
@@ -392,7 +413,7 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
     if *pos == input.len() {
         return Err(CompilerError {
             position: *pos,
-            message: "Expected >".to_string(),
+            message: format!("Expected >. {} tag was never closed", name),
         });
     }
 
@@ -413,7 +434,9 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
         } else {
             let inner = &input[*pos..closing_tag_pos];
             // TODO: Be smart about JS and CSS.
-            children.push(Node::Text(inner.to_string()));
+            if !inner.is_empty() {
+                children.push(Node::Text(inner.to_string()));
+            }
         }
 
         *pos = end_pos;

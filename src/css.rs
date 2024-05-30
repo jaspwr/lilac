@@ -6,10 +6,16 @@ pub struct Rule {
     pub properties: Vec<Property>,
 }
 
+impl Rule {
+    pub fn matches_classes(&self, classes: &Vec<String>) -> bool {
+        self.selector.matches_classes(classes)
+    } 
+}
+
 #[derive(Debug, Clone)]
 pub struct Property {
     pub name: String,
-    pub value: String,
+    pub value: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -19,6 +25,15 @@ pub enum Selector {
     Class(String),
     ID(String),
     All,
+}
+
+impl Selector {
+    pub fn matches_classes(&self, classes: &Vec<String>) -> bool {
+        match self {
+            Selector::Class(s) => classes.contains(s),
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -92,7 +107,7 @@ pub fn parse(input: &str) -> Result<StyleSheet, CSSParseError> {
 
     let mut current_property = Property {
         name: String::new(),
-        value: String::new(),
+        value: vec![],
     };
 
     while let Some(token) = next_token(input, &mut pos)? {
@@ -138,12 +153,7 @@ pub fn parse(input: &str) -> Result<StyleSheet, CSSParseError> {
                     state = ParsingContext::AwaitingColon;
                 }
                 ParsingContext::PropertyValue => {
-                    let space = if current_property.value.len() > 0 {
-                        " "
-                    } else {
-                        ""
-                    };
-                    current_property.value.push_str(&format!("{}{}", space, s));
+                    current_property.value.push(s);
                 }
                 ParsingContext::AwaitingColon => {
                     unreachable!();
@@ -151,7 +161,7 @@ pub fn parse(input: &str) -> Result<StyleSheet, CSSParseError> {
             },
             Token::String(s) => {
                 assert_state(state, ParsingContext::PropertyValue, "string", pos)?;
-                current_property.value = format!("\"{s}\"");
+                current_property.value.push(s);
             }
         }
     }

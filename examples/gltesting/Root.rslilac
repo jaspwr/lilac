@@ -1,11 +1,75 @@
 <script>
     let count: Reactive<i32> = Reactive::new(1);
 
-    let count_cpy = count.clone()
-    let add = move || count_cpy += 1;
+    let l: ReactiveList<i32> = ReactiveList::new();
+
+    let l_cpy = l.clone();
+    let mut count_cpy = count.clone();
+    let add = Box::new(move || {
+	let mut count_cpy = count_cpy.clone();
+	let mut l_cpy = l_cpy.clone();
+	l_cpy.push(count_cpy.get_copy());
+	count_cpy += 1;
+    });
+
+    globals.viewport.v_zoom <<= 20.;
+
 </script>
 
 {$count}
 
-<button onclick={add}>Add one</button>
+<button h={Size::Fixed(100. + ($count as f32) * 20.)} onclick={add} class="fuck">Add one</button>
 
+{#if $count % 2 == 1}
+    {format!("           {}", globals.loaded_project.$tempo)}
+{/if}
+
+{#for note:u8 in 3..20}
+    <Note note={note} />
+{/for}
+
+{#for note:u8 in 0..120}
+    <script>
+	let keyboard_width = globals.piano_roll_keyboard_width.clone();
+
+	let mut classes = vec!["keyboard-key"];
+
+	if crate::utils::is_black_key(note.into()) {
+	    classes.push("black-key");
+	} else {
+	    classes.push("white-key");
+	}
+    </script>
+
+    <div class={classes}
+	x = { Coordinate::Fixed(0.) }
+	y = { Coordinate::Fixed(note as f32 * globals.viewport.$v_zoom) }
+	w = { Size::Fixed(keyboard_width) }
+	h = { Size::Fixed(globals.viewport.$v_zoom) }
+    >
+	{crate::utils::note_name(note, true)}
+    </div>
+{/for}
+
+<style>
+    .keyboard-key {
+	border: 1. #000000;
+    }
+
+    .white-key {
+	background-color: #ffffff;
+	color: #000000;
+    }
+    
+    .black-key {
+	background-color: #000000;
+	color: #ffffff;
+    }
+
+    .fuck {
+	background-color: #ff0000;
+	border: 1. #000000;
+	font-size: 20.;
+	color: #0000ff;
+    }
+</style>

@@ -1,6 +1,6 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::atomic::Ordering};
+use std::{cell::RefCell, collections::HashMap, error::Error, rc::Rc, sync::atomic::Ordering};
 
-use ress::tokens::Token;
+use ress::{tokens::Token, Item};
 
 use crate::{utils::find_and_replace_js_identifiers, Component, JSExpression, Node, ID_COUNTER};
 
@@ -59,23 +59,30 @@ fn get_declared_js_identifiers(expr: &JSExpression) -> Vec<String> {
 
     for item in ress::Scanner::new(&expr) {
         if let Ok(item) = item {
-            if item.token.is_ident() {
-                if let Some(ref prev) = previous {
-                    if let Token::Keyword(kw) = prev {
-                        let kw = kw.as_str();
-                        if kw == "let" || kw == "const" || kw == "var" || kw == "function" {
-                            let ident = item.token.to_string();
-                            if !identifiers.contains(&ident) {
-                                identifiers.push(ident);
-                            }
-                        }
-                    }
+            if is_def(&item, previous) {
+                let ident = item.token.to_string();
+                if !identifiers.contains(&ident) {
+                    identifiers.push(ident);
                 }
             }
-
             previous = Some(item.token);
         }
     }
 
     identifiers
+}
+
+fn is_def(item: &Item<&str>, previous: Option<Token<&str>>) -> bool {
+    if item.token.is_ident() {
+        if let Some(ref prev) = previous {
+            if let Token::Keyword(kw) = prev {
+                let kw = kw.as_str();
+                if kw == "let" || kw == "const" || kw == "var" || kw == "function" {
+                    return true;
+                }
+            }
+        }
+    }
+
+    false
 }

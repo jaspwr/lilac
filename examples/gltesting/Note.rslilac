@@ -1,0 +1,35 @@
+<script>
+
+let x_of_time = |t: crate::Time, x_offset: f32, time_scroll: f32, h_zoom: f32| {
+    x_offset + h_zoom * (t as f32 - time_scroll) as f32
+};
+
+let t = 2.;
+
+let keyboard_width = globals.piano_roll_keyboard_width.clone();
+
+</script>
+
+<div 
+    x = { Coordinate::Fixed(x_of_time(
+	    t, 
+	    keyboard_width,
+	    globals.viewport.$time_scroll, 
+	    globals.viewport.$h_zoom,
+	    )) 
+	}
+    y = { Coordinate::Fixed(globals.viewport.$v_zoom * prop_note as f32) }
+    h = { Size::Fixed(globals.viewport.$v_zoom) }
+    w = { Size::Fixed(200.) }
+>
+    {crate::utils::note_name(prop_note, true)} 
+</div>
+
+<style>
+    div {
+	background-color: #ffffff;
+	border: 1. #000000;
+	color: #000000;
+	font-size: 12.;
+    }
+</style>
