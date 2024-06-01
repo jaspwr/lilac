@@ -12,8 +12,6 @@ impl Node {
         let mut root = self.clone();
         filter_whitespace_nodes(&mut root);
 
-        println!("{:#?}", root);
-
         let styles = codegen_stylesheet(&stylesheet);
 
         let ctx = CodegenContext { styles: stylesheet };
@@ -103,8 +101,6 @@ struct CodegenContext {
 
 fn create_text_node(text: &str, ctx: CodegenContext) -> ElementCode {
     let elem_var_name = format!("__text{}", uid());
-
-    println!("Creating text node: {} {}", text, elem_var_name);
 
     let creation_code = format!(
         "
@@ -615,8 +611,6 @@ impl Element {
                 ClassList::Reactive(expr) => {
                     let (expr, clones, subs) =
                         reactive_expression(&expr, &elem_var_name, &"update_class".to_string());
-
-                    println!("Reactive class expr: {}", expr);
 
                     update_class = format!("
                         {clones}

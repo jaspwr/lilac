@@ -85,5 +85,7 @@ const lstate = (initialState) => {
 	lstate.removeSubscriptions.forEach((sub) => sub(position));
     };
 
+    lstate.length = () => lstate.value.length;
+
     return lstate;
 }

@@ -311,11 +311,9 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
             if c == '=' {
                 unparsed_attributes.push("=".to_string());
             } else {
-                println!("{}", c);
                 token.push(c);
             }
         } else {
-            println!("{}", c);
             token.push(c);
 
             match attr_context {
@@ -347,8 +345,6 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
     }
 
     let mut attributes = vec![];
-
-    println!("{:?}", unparsed_attributes);
 
     if !unparsed_attributes.is_empty() {
         while !unparsed_attributes.is_empty() {

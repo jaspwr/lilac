@@ -790,6 +790,10 @@ impl Selector {
             Selector::ID(id) => format!("#{}", id),
             Selector::Class(class) => format!(".{}", class),
             Selector::Tag(tag) => tag.clone(),
+            Selector::Pseduo(pseudo) => format!(":{}", pseudo),
+            Selector::Descendant(a, b) => format!("{} {}", a.codegen(), b.codegen()),
+            Selector::Child(a, b) => format!("{} > {}", a.codegen(), b.codegen()),
+            Selector::NextSibling(a, b) => format!("{} + {}", a.codegen(), b.codegen()),
         }
     }
 }

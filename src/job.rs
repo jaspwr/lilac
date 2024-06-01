@@ -83,8 +83,6 @@ fn compile(job: &Job) -> Result<(), String> {
 
     let code = root_node.codegen(target, stylesheet)?;
 
-    println!("{}", code);
-
     write_file(&job.output, &code).map_err(|e| e.to_string())?;
 
     Ok(())
