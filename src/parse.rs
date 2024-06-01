@@ -2,7 +2,7 @@ use std::string::ParseError;
 
 use owo_colors::OwoColorize;
 
-use crate::{Attribute, ClassList, Component, Dialect, Element, Id, Node};
+use crate::{utils::StartsWithAt, Attribute, ClassList, Component, Dialect, Element, Id, Node};
 
 pub fn parse_full(
     input: &str,
@@ -35,8 +35,10 @@ impl CompilerError {
 }
 
 fn format_position(input: &str, position: Position) -> String {
-    let line = input[..position].chars().filter(|c| *c == '\n').count() + 1;
-    let column = position - input[..position].rfind('\n').unwrap_or(0);
+    let line = input.chars().skip(position).filter(|c| *c == '\n').count() + 1;
+    // let column = position - input.chars().skip(position).rfind('\n').unwrap_or(0);
+    // FIXME
+    let column = 2;
     format!("[{}:{}] ", line, column)
 }
 
@@ -56,6 +58,10 @@ fn parse(input: &str, start: usize, end: usize) -> Result<Vec<Node>, CompilerErr
 
     while pos < end {
         skip_comments(input, &mut pos);
+
+        if pos >= input.len() {
+            break;
+        }
 
         let c = input.chars().nth(pos).unwrap();
 
@@ -153,7 +159,7 @@ fn search_for_closing(
     pos: &mut usize,
 ) -> Result<usize, CompilerError> {
     while *pos < haystack.len() {
-        if haystack[*pos..].starts_with(needle) {
+        if haystack.starts_with_at(*pos, needle) {
             let at = *pos;
             *pos += needle.len();
             return Ok(at);
@@ -208,9 +214,9 @@ fn curly_inner(input: &str, pos: &mut usize) -> String {
     let mut depth = 1;
 
     while *pos < input.len() {
-        if input[*pos..].starts_with("{") {
+        if input.starts_with_at(*pos, "{") {
             depth += 1;
-        } else if input[*pos..].starts_with("}") {
+        } else if input.starts_with_at(*pos, "}") {
             depth -= 1;
         }
 
@@ -221,7 +227,7 @@ fn curly_inner(input: &str, pos: &mut usize) -> String {
         }
     }
 
-    input[start..(*pos - 1)].to_string()
+    input.chars().skip(start).take((*pos - 1) - start).collect()
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -234,14 +240,14 @@ enum AttrParsingContext {
 fn skip_comments(input: &str, pos: &mut usize) {
     let mut in_comment = false;
 
-    if input[*pos..].starts_with("<!--") {
+    if input.starts_with_at(*pos, "<!--") {
         in_comment = true;
         *pos += 4;
     }
 
     while *pos < input.len() && in_comment {
         if in_comment {
-            if input[*pos..].starts_with("-->") {
+            if input.starts_with_at(*pos, "-->") {
                 *pos += 3;
                 return;
             }
@@ -279,9 +285,9 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
     let mut depth = 0;
 
     while *pos < input.len()
-        && !(attr_context == AttrParsingContext::None && input[*pos..].starts_with(">"))
+        && !(attr_context == AttrParsingContext::None && input.starts_with_at(*pos, ">"))
     {
-        let c = input[*pos..].chars().next().unwrap();
+        let c = input.chars().nth(*pos).unwrap();
 
         if attr_context == AttrParsingContext::None {
             if (c.is_whitespace() || c == '=') && !token.is_empty() {
@@ -291,7 +297,7 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
 
             skip_whitespace(input, pos);
 
-            let c = input[*pos..].chars().next().unwrap();
+            let c = input.chars().skip(*pos).next().unwrap();
 
             if c == '"' {
                 attr_context = AttrParsingContext::Quotes;
@@ -299,12 +305,12 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
                 attr_context = AttrParsingContext::Curly;
             }
 
-            if input[*pos..].starts_with("/>") {
+            if input.starts_with_at(*pos, "/>") {
                 no_closer = true;
                 break;
             }
 
-            if input[*pos..].starts_with(">") {
+            if input.starts_with_at(*pos, ">") {
                 break;
             }
 
@@ -383,7 +389,7 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
 
                 attributes.push(Attribute::Static(crate::StaticAttribute {
                     name,
-                    value: value[1..value.len() - 1].to_string(),
+                    value: value.chars().skip(1).take(value.len() - 2).collect(),
                 }));
             } else if value.starts_with("{") {
                 if !value.ends_with("}") {
@@ -395,7 +401,7 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
 
                 attributes.push(Attribute::Reactive(crate::ReactiveAttribute {
                     name,
-                    value: value[1..value.len() - 1].to_string(),
+                    value: value.chars().skip(1).take(value.len() - 2).collect(),
                 }));
             } else {
                 return Err(CompilerError {
@@ -428,7 +434,11 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
         if children_are_html {
             children = parse(input, *pos, closing_tag_pos)?;
         } else {
-            let inner = &input[*pos..closing_tag_pos];
+            let inner = &input
+                .chars()
+                .skip(*pos)
+                .take(closing_tag_pos - *pos)
+                .collect::<String>();
             // TODO: Be smart about JS and CSS.
             if !inner.is_empty() {
                 children.push(Node::Text(inner.to_string()));
@@ -439,7 +449,11 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
     }
 
     if name == "script" {
-        let js = input[opening_tag_end..closing_tag_pos].to_string();
+        let js = input
+            .chars()
+            .skip(opening_tag_end)
+            .take(closing_tag_pos - opening_tag_end)
+            .collect();
         return Ok(Node::ScriptTag(crate::ScriptTag {
             attributes,
             code: js,
@@ -447,8 +461,13 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
     }
 
     if name == "style" {
-        let css = &input[opening_tag_end..closing_tag_pos];
-        let css = crate::css::parse(css).map_err(|e| CompilerError {
+        let css: String = input
+            .to_string()
+            .chars()
+            .skip(opening_tag_end)
+            .take(closing_tag_pos - opening_tag_end)
+            .collect();
+        let css = crate::css::parse(css.as_str()).map_err(|e| CompilerError {
             position: e.location + opening_tag_end,
             message: format!("{}: {}", "CSS syntax error".red(), e.message),
         })?;
@@ -503,15 +522,15 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
 fn grab_alphanum_token(input: &str, pos: &mut usize) -> String {
     let start = *pos;
 
-    while *pos < input.len() && input[*pos..].starts_with(|c: char| c.is_alphanumeric()) {
+    while *pos < input.len() && input.chars().nth(*pos).unwrap().is_alphanumeric() {
         *pos += 1;
     }
 
-    input[start..(*pos)].to_string()
+    input.chars().skip(start).take(*pos - start).collect()
 }
 
 fn skip_whitespace(input: &str, pos: &mut usize) {
-    while *pos < input.len() && input[*pos..].starts_with(char::is_whitespace) {
+    while *pos < input.len() && input.chars().nth(*pos).unwrap().is_whitespace() {
         *pos += 1;
     }
 }
@@ -521,24 +540,24 @@ fn find_closing(input: &str, name: &str, mut pos: usize) -> Result<(usize, usize
 
     while pos < input.len() {
         skip_comments(input, &mut pos);
-        if input[pos..].starts_with("<") {
+        if input.starts_with_at(pos, "<") {
             let mut pos = pos + 1;
             skip_whitespace(input, &mut pos);
-            if input[pos..].starts_with(name) {
+            if input.starts_with_at(pos, name) {
                 depth += 1;
             }
         }
 
-        if input[pos..].starts_with("</") {
+        if input.starts_with_at(pos, "</") {
             let closing_tag_pos = pos;
             let mut pos = pos + 2;
             skip_whitespace(input, &mut pos);
 
-            if input[pos..].starts_with(name) {
+            if input.starts_with_at(pos, name) {
                 pos += name.len();
                 skip_whitespace(input, &mut pos);
 
-                if input[pos..].starts_with(">") {
+                if input.starts_with_at(pos, ">") {
                     if depth == 0 {
                         return Ok((pos, closing_tag_pos));
                     }

@@ -67,3 +67,19 @@ pub fn filter_whitespace_nodes(node: &mut Node) {
 pub fn is_all_whitespace(s: &str) -> bool {
     s.chars().all(|c| c.is_whitespace())
 }
+
+pub trait StartsWithAt {
+    fn starts_with_at(&self, start_index: usize, other: &str) -> bool;
+}
+
+impl StartsWithAt for String {
+    fn starts_with_at(&self, start_index: usize, other: &str) -> bool {
+        self.chars().skip(start_index).zip(other.chars()).all(|(a, b)| a == b)
+    }
+}
+
+impl StartsWithAt for str {
+    fn starts_with_at(&self, start_index: usize, other: &str) -> bool {
+        self.chars().skip(start_index).zip(other.chars()).all(|(a, b)| a == b)
+    }
+}

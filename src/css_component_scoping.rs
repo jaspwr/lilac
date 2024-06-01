@@ -75,7 +75,7 @@ fn replace_refs(
                 }
                 ClassList::Reactive(expr) => {
                     e.classes = Some(ClassList::Reactive(format!(
-                        "({}) + \" \" + ({}).split(\" \").map((s) => \"class{}\" + s).join()",
+                        "({}) + \" \" + ({}).split(\" \").map((s) => \"class{}\" + s).join(\" \")",
                         expr.clone(),
                         expr.clone(),
                         prefix
