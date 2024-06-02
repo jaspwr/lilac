@@ -107,7 +107,7 @@ fn handle_expression(input: &str, pos: &mut usize, opening: String) -> Result<No
             let expression = opening_tokens[1..].join(" ");
 
             let opening_pos = *pos;
-            let closing_pos = search_for_closing(input, "{/if}", pos)?;
+            let closing_pos = search_for_closing(input, Some("{#if"), "{/if}", pos)?;
 
             // TODO: else
 
@@ -137,7 +137,7 @@ fn handle_expression(input: &str, pos: &mut usize, opening: String) -> Result<No
             }
 
             let opening_pos = *pos;
-            let closing_pos = search_for_closing(input, "{/for}", pos)?;
+            let closing_pos = search_for_closing(input, Some("{#for"), "{/for}", pos)?;
 
             let children = parse(input, opening_pos, closing_pos)?;
 
@@ -157,15 +157,29 @@ fn handle_expression(input: &str, pos: &mut usize, opening: String) -> Result<No
 
 fn search_for_closing(
     haystack: &str,
+    depth_increase: Option<&str>,
     needle: &str,
     pos: &mut usize,
 ) -> Result<usize, CompilerError> {
+    let mut depth = 0;
+
     while *pos < haystack.len() {
         if haystack.starts_with_at(*pos, needle) {
-            let at = *pos;
-            *pos += needle.len();
-            return Ok(at);
+            if depth == 0 {
+                let at = *pos;
+                *pos += needle.len();
+                return Ok(at);
+            } else {
+                depth -= 1;
+            }
         }
+
+        if let Some(depth_increase) = depth_increase {
+            if haystack.starts_with_at(*pos, depth_increase) {
+                depth += 1;
+            }
+        }
+
         *pos += 1;
     }
 
