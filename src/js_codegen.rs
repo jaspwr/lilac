@@ -622,11 +622,10 @@ fn conditional_elements_codegen(
 
     let func = format!(
         "const {id}cond = (c) => {{
+        {elem_var_name}.innerHTML = \"\";
         if (c) {{
             {children}
-        }} else {{
-            {elem_var_name}.innerHTML = \"\";
-        }}
+        }}    
     }};"
     );
 
