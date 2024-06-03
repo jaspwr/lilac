@@ -216,7 +216,11 @@ impl Element {
         for attr in &self.attributes {
             match attr {
                 Attribute::Static(StaticAttribute { name, value }) => {
-                    code.push_str(&format!(" {}=\"{}\"", name, value));
+                    if let Some(value) = value {
+                        code.push_str(&format!(" {}=\"{}\"", name, value));
+                    } else {
+                        code.push_str(&format!(" {}", name));
+                    }
                 }
                 Attribute::Reactive(ReactiveAttribute { name, value }) => {
                     panic!();
@@ -319,10 +323,15 @@ fn handle_attr(
 ) {
     match attr {
         Attribute::Static(StaticAttribute { name, value }) => {
-            code.push_str(&format!(
-                "{}.setAttribute(\"{}\", \"{}\");\n",
-                elem_var_name, name, value
-            ));
+            if let Some(value) = value {
+                code.push_str(&format!(
+                    "{elem_var_name}.setAttribute(\"{name}\", \"{value}\");\n",
+                ));
+            } else {
+                code.push_str(&format!(
+                    "{elem_var_name}.setAttribute(\"{name}\", \"\");\n",
+                ));
+            }
         }
         Attribute::Reactive(ReactiveAttribute { name, value }) => {
             if handle_special_attr(
@@ -377,7 +386,7 @@ fn handle_special_attr(
         });
 
         let input_type = match input_type {
-            Some(Attribute::Static(StaticAttribute { name: _, value })) => value,
+            Some(Attribute::Static(StaticAttribute { name: _, value: Some(v) })) => v,
             _ => return false,
         };
 
@@ -436,7 +445,11 @@ fn codegen_props_set(props: &Vec<Attribute>, cvr: &CVR) -> JSExpression {
         .iter()
         .map(|p| match p {
             Attribute::Static(StaticAttribute { name, value }) => {
-                format!("props.{} = \"{}\";", name, value)
+                if let Some(value) = value {
+                    format!("props.{} = \"{}\";", name, value)
+                } else {
+                    format!("props.{} = true;", name)
+                }
             }
             Attribute::Reactive(ReactiveAttribute { name, value }) => {
                 let mut expr = value.to_string();
@@ -588,7 +601,7 @@ fn reactive_expression(expr: &JSExpression, update_fn: &JSExpression, cvr: &CVR)
             reactive_deps.push((name.to_string(), namespace));
             namespace = "".to_string();
         } else if let ress::tokens::Token::Punct(ref p) = item.unwrap().token {
-            if p == &ress::tokens::Punct::Period  {
+            if p == &ress::tokens::Punct::Period {
                 namespace = format!("{}{}.", namespace, last_name);
             } else {
                 namespace = "".to_string();
@@ -599,11 +612,8 @@ fn reactive_expression(expr: &JSExpression, update_fn: &JSExpression, cvr: &CVR)
     }
 
     for (dep, _) in reactive_deps.iter() {
-        expr = find_and_replace_js_identifiers(
-            &expr,
-            &format!("${}", dep),
-            &format!("{}.value", dep),
-        );
+        expr =
+            find_and_replace_js_identifiers(&expr, &format!("${}", dep), &format!("{}.value", dep));
     }
 
     let subscriptions = reactive_deps

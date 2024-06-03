@@ -370,22 +370,25 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
 
     if !unparsed_attributes.is_empty() {
         while !unparsed_attributes.is_empty() {
-            if unparsed_attributes.len() < 3 {
-                return Err(CompilerError {
-                    position: *pos,
-                    message: "Expected attribute value".to_string(),
-                });
-            }
+            // if unparsed_attributes.len() < 3 {
+            //     return Err(CompilerError {
+            //         position: *pos,
+            //         message: "Expected attribute value".to_string(),
+            //     });
+            // }
             let name = unparsed_attributes.remove(0);
-            let eq = unparsed_attributes.remove(0);
-            let value = unparsed_attributes.remove(0);
 
-            if eq != "=" {
-                return Err(CompilerError {
-                    position: *pos,
-                    message: "Expected =".to_string(),
-                });
+            if unparsed_attributes.is_empty() || unparsed_attributes[0] != "=" {
+                attributes.push(Attribute::Static(crate::StaticAttribute {
+                    name,
+                    value: None,
+                }));
+
+                continue;
             }
+
+            let _eq = unparsed_attributes.remove(0);
+            let value = unparsed_attributes.remove(0);
 
             if value.starts_with("\"") {
                 if !value.ends_with("\"") && value.len() > 1 {
@@ -405,7 +408,7 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
 
                 attributes.push(Attribute::Static(crate::StaticAttribute {
                     name,
-                    value: value.chars().skip(1).take(value.len() - 2).collect(),
+                    value: Some(value.chars().skip(1).take(value.len() - 2).collect()),
                 }));
             } else if value.starts_with("{") {
                 if !value.ends_with("}") {
@@ -502,23 +505,24 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
     let id = attributes
         .iter()
         .find(|a| a.name() == "id")
-        .map(|a| match a {
-            Attribute::Static(sa) => Id::Static(sa.value.clone()),
-            Attribute::Reactive(ra) => Id::Reactive(ra.value.clone()),
+        .and_then(|a| match a {
+            Attribute::Static(sa) => Some(Id::Static(sa.value.clone()?)),
+            Attribute::Reactive(ra) => Some(Id::Reactive(ra.value.clone())),
         });
 
     let classes = attributes
         .iter()
         .find(|a| a.name() == "class")
-        .map(|a| match a {
-            Attribute::Static(sa) => ClassList::Static(
+        .and_then(|a| match a {
+            Attribute::Static(sa) => Some(ClassList::Static(
                 sa.value
+                    .clone()?
                     .split(" ")
                     .map(|s| s.to_string())
                     .filter(|s| s.len() != 0)
                     .collect(),
-            ),
-            Attribute::Reactive(ra) => ClassList::Reactive(ra.value.clone()),
+            )),
+            Attribute::Reactive(ra) => Some(ClassList::Reactive(ra.value.clone())),
         });
 
     let attributes = attributes

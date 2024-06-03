@@ -178,7 +178,7 @@ impl Attribute {
 #[derive(Debug, Clone)]
 pub struct StaticAttribute {
     name: String,
-    value: String,
+    value: Option<String>,
 }
 
 #[derive(Debug, Clone)]

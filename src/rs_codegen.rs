@@ -659,6 +659,11 @@ impl Element {
             if let Some(attr) = self.attributes.iter().find(|a| a.name() == attr_name) {
                 match attr {
                     Attribute::Static(StaticAttribute { name: _, value }) => {
+                        let value = match value {
+                            Some(v) => v.clone(),
+                            None => "true".to_string(),
+                        };
+
                         creation_code.push_str(&format!("\n{elem_var_name}.mutate(move |e: &mut Element| {{ e.{property_name} = {value};}});\n"));
                     }
                     Attribute::Reactive(ReactiveAttribute { name: _, value }) => {
@@ -697,9 +702,13 @@ impl Component {
 
         for prop in self.props.iter() {
             let (name, value) = match prop {
-                Attribute::Static(StaticAttribute { name, value }) => {
-                    (name, format!("\"{}\".to_string()", value))
-                }
+                Attribute::Static(StaticAttribute { name, value }) => (
+                    name,
+                    value
+                        .clone()
+                        .map(|v| format!("\"{}\".to_string()", v))
+                        .unwrap_or("true".to_string()),
+                ),
                 Attribute::Reactive(ReactiveAttribute { name, value }) => (name, value.clone()),
             };
 
