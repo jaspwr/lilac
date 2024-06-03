@@ -576,6 +576,10 @@ fn reactive_expression(expr: &JSExpression, update_fn: &JSExpression, cvr: &CVR)
             let name = name.to_string();
             last_name = name.clone();
 
+            if last_name.starts_with("$") {
+                last_name = format!("{}.value", last_name.trim_start_matches("$").to_string());
+            }
+
             if !name.starts_with("$") {
                 continue;
             }
