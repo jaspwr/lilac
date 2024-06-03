@@ -4,6 +4,7 @@ use owo_colors::OwoColorize;
 
 use crate::{
     compile::fill_holes,
+    config::load_config,
     css::{self, StyleSheet},
     css_component_scoping::scope_css_to_component,
     js_codegen::codegen_stylesheet,
@@ -36,6 +37,16 @@ impl Job {
 }
 
 fn compile(job: &Job) -> Result<(), String> {
+    let config = load_config(&job.path)?;
+
+    if config.lilac_version != env!("CARGO_PKG_VERSION") {
+        return Err(format!(
+            "Version mismatch. Expected: {}, Found: {}",
+            env!("CARGO_PKG_VERSION"),
+            config.lilac_version
+        ));
+    }
+
     let files = list_files(&job.path).map_err(|e| e.to_string())?;
 
     let mut components_map = HashMap::new();
@@ -175,5 +186,5 @@ fn load_componet(path: PathBuf) -> Result<Component, String> {
         _ => unreachable!(),
     };
 
-    parse_full(&contents, name, dialect).map_err(|err| err.format(&contents))
+    parse_full(&contents, name, dialect).map_err(|err| err.format(name, &contents))
 }

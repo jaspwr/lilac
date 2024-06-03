@@ -34,16 +34,30 @@ pub struct CompilerError {
 }
 
 impl CompilerError {
-    pub fn format(&self, input: &str) -> String {
-        format!("{} {}", format_position(input, self.position), self.message)
+    pub fn format(&self, file_name: &str, input: &str) -> String {
+        format!(
+            "\"{}\" {} {}",
+            file_name,
+            format_position(input, self.position),
+            self.message
+        )
     }
 }
 
 fn format_position(input: &str, position: Position) -> String {
-    let line = input.chars().skip(position).filter(|c| *c == '\n').count() + 1;
-    // let column = position - input.chars().skip(position).rfind('\n').unwrap_or(0);
-    // FIXME
-    let column = 2;
+    let line = input.chars().take(position).filter(|c| *c == '\n').count() + 1;
+
+    let mut column = 0;
+
+    let mut i = position;
+    while i > 0 {
+        i -= 1;
+        column += 1;
+        if input.chars().nth(i).unwrap() == '\n' {
+            break;
+        }
+    }
+
     format!("[{}:{}] ", line, column)
 }
 

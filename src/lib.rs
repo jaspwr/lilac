@@ -4,6 +4,7 @@ use css::StyleSheet;
 
 pub mod codegen;
 pub mod compile;
+pub mod config;
 pub mod css;
 pub mod css_component_scoping;
 pub mod job;
@@ -44,8 +45,8 @@ pub fn wasm_compile_(files: Vec<File>) -> Result<String, String> {
     let mut stylesheet = vec![];
 
     for File { name, contents } in files {
-        let component =
-            parse::parse_full(&contents, &name, Dialect::JsLilac).map_err(|err| err.format(&contents))?;
+        let component = parse::parse_full(&contents, &name, Dialect::JsLilac)
+            .map_err(|err| err.format(name.as_str(), &contents))?;
 
         let (styles, component) = job::collect_css(component);
 

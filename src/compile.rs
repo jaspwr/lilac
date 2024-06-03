@@ -31,7 +31,7 @@ pub fn _fill_holes(
                         position: position.clone(),
                         message: format!("Component {} not found.", name),
                     }
-                    .format(file_contents)
+                    .format(name.as_str(), file_contents)
                 })?;
 
                 let mut instance = component.clone();
