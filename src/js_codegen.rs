@@ -3,12 +3,7 @@ use std::{collections::HashMap, ops::DerefMut, sync::atomic::Ordering};
 use owo_colors::colors::xterm::PompadourMagenta;
 
 use crate::{
-    codegen::CodegenResult,
-    css::{Rule, Selector, StyleSheet},
-    js_component_scoping::ComponentVariableRenamer,
-    utils::find_and_replace_js_identifiers,
-    Attribute, ClassList, Component, Dialect, Element, Id, JSExpression, Node, ReactiveAttribute,
-    ScriptTag, StaticAttribute, ID_COUNTER,
+    codegen::CodegenResult, css::{Rule, Selector, StyleSheet}, js_component_scoping::ComponentVariableRenamer, parse::VOID_ELEMENTS, utils::find_and_replace_js_identifiers, Attribute, ClassList, Component, Dialect, Element, Id, JSExpression, Node, ReactiveAttribute, ScriptTag, StaticAttribute, ID_COUNTER
 };
 
 type CVR = ComponentVariableRenamer;
@@ -228,6 +223,11 @@ impl Element {
             }
         }
         code.push('>');
+
+        if VOID_ELEMENTS.contains(&self.name.as_str()) {
+            return Ok(code);
+        }
+
         for child in &self.children {
             code.push_str(&child.codegen_js(_type, cvr, rrm.clone())?);
         }

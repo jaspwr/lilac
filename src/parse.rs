@@ -20,6 +20,11 @@ pub fn parse_full(
     })
 }
 
+pub static VOID_ELEMENTS: [&str; 13] = [
+    "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "wbr", "track",
+    "source",
+];
+
 type Position = usize;
 
 #[derive(Debug)]
@@ -278,6 +283,22 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
 
     *pos += 1;
     skip_whitespace(input, pos);
+
+    if input.starts_with_at(*pos, "/") {
+        *pos += 1;
+        let name = grab_alphanum_token(input, pos);
+        if VOID_ELEMENTS.contains(&name.as_str()) {
+            return Err(CompilerError {
+                position: *pos,
+                message: format!("Element <{name}> cannot have a closing tag."),
+            });
+        }
+
+        return Err(CompilerError {
+            position: *pos,
+            message: "Unexpected closing tag".to_string(),
+        });
+    }
 
     let name = grab_alphanum_token(input, pos);
 
@@ -557,6 +578,10 @@ fn skip_whitespace(input: &str, pos: &mut usize) {
 
 fn find_closing(input: &str, name: &str, mut pos: usize) -> Result<(usize, usize), CompilerError> {
     let mut depth = 0;
+
+    if VOID_ELEMENTS.contains(&name) {
+        return Ok((pos, pos));
+    }
 
     while pos < input.len() {
         skip_comments(input, &mut pos);
