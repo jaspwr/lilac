@@ -397,7 +397,7 @@ fn handle_special_attr(
                 "{{
                 const value = {value};
                 if (value.__STATE === true) {{
-                    const update_fn = () => ({elem_var_name}).value = value.value;
+                    const update_fn = () => ({elem_var_name}).value = value.get();
                     value.subscribe(update_fn);
                     update_fn();
                     {elem_var_name}.oninput = (e) => {{
@@ -412,7 +412,7 @@ fn handle_special_attr(
                 "{{
                 const value = {value};
                 if (value.__STATE === true) {{
-                    const update_fn = () => ({elem_var_name}).checked = value.value;
+                    const update_fn = () => ({elem_var_name}).checked = value.get();
                     value.subscribe(update_fn);
                     update_fn();
                     {elem_var_name}.onchange = (e) => {{
@@ -590,7 +590,7 @@ fn reactive_expression(expr: &JSExpression, update_fn: &JSExpression, cvr: &CVR)
             last_name = name.clone();
 
             if last_name.starts_with("$") {
-                last_name = format!("{}.value", last_name.trim_start_matches("$").to_string());
+                last_name = format!("{}.get()", last_name.trim_start_matches("$").to_string());
             }
 
             if !name.starts_with("$") {
@@ -613,7 +613,7 @@ fn reactive_expression(expr: &JSExpression, update_fn: &JSExpression, cvr: &CVR)
 
     for (dep, _) in reactive_deps.iter() {
         expr =
-            find_and_replace_js_identifiers(&expr, &format!("${}", dep), &format!("{}.value", dep));
+            find_and_replace_js_identifiers(&expr, &format!("${}", dep), &format!("{}.get()", dep));
     }
 
     let subscriptions = reactive_deps
@@ -760,7 +760,7 @@ fn loop_codegen(
                 {elem_var_name}.removeChild({elem_var_name}.childNodes[position]);
             }});
 
-            {id}loop({list}.value);
+            {id}loop({list}.get());
         ",
         )
     } else {
