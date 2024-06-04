@@ -91,6 +91,7 @@ pub enum Node {
         position: usize,
         props: Vec<Attribute>,
         file_contents: Box<String>,
+        children: Option<Vec<Node>>,
     },
     Element(Element),
     ScriptTag(ScriptTag),

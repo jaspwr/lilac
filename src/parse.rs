@@ -11,6 +11,13 @@ pub fn parse_full(
 ) -> Result<Component, CompilerError> {
     let children = parse(input, 0, input.len())?;
 
+    if component_name == "Children" {
+        return Err(CompilerError {
+            position: 0,
+            message: "Children is a reserved component name".to_string(),
+        });
+    }
+
     Ok(Component {
         name: component_name.to_string(),
         dialect,
@@ -62,7 +69,7 @@ fn format_position(input: &str, position: Position) -> String {
 }
 
 fn push_text(text: &mut String, nodes: &mut Vec<Node>) {
-    if !text.is_empty() {
+    if !text.is_empty() && !text.chars().all(char::is_whitespace) {
         nodes.push(Node::Text(text.clone()));
         text.clear();
     }
@@ -534,6 +541,7 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
             position: starting_pos,
             props: attributes,
             file_contents: Box::new(input.to_string()),
+            children: if no_closer { None } else { Some(children) },
         });
     }
 

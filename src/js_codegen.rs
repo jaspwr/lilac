@@ -3,7 +3,13 @@ use std::{collections::HashMap, ops::DerefMut, sync::atomic::Ordering};
 use owo_colors::colors::xterm::PompadourMagenta;
 
 use crate::{
-    codegen::CodegenResult, css::{Rule, Selector, StyleSheet}, js_component_scoping::ComponentVariableRenamer, parse::VOID_ELEMENTS, utils::find_and_replace_js_identifiers, Attribute, ClassList, Component, Dialect, Element, Id, JSExpression, Node, ReactiveAttribute, ScriptTag, StaticAttribute, ID_COUNTER
+    codegen::CodegenResult,
+    css::{Rule, Selector, StyleSheet},
+    js_component_scoping::ComponentVariableRenamer,
+    parse::VOID_ELEMENTS,
+    utils::find_and_replace_js_identifiers,
+    Attribute, ClassList, Component, Dialect, Element, Id, JSExpression, Node, ReactiveAttribute,
+    ScriptTag, StaticAttribute, ID_COUNTER,
 };
 
 type CVR = ComponentVariableRenamer;
@@ -90,6 +96,12 @@ impl Node {
                 children,
             } => conditional_elements_codegen(condition, children, _type, cvr, rrm)?,
             Node::ComponentHole { name, props, .. } => {
+                // HACK: These should generally be removed but when a component instance has no
+                // children supplied these get left behind.
+                if name == "Children" {
+                    return Ok("".to_string());
+                }
+
                 if let Some(create_fn_name) = rrm.get(name) {
                     let props_set = codegen_props_set(&props, cvr);
 
@@ -149,6 +161,14 @@ fn has_reactive_attributes(attrs: &Vec<Attribute>) -> bool {
 
 impl Element {
     fn codegen(&self, _type: &CodegenType, cvr: &CVR, rrm: RRM) -> Result<String, String> {
+        if self.name == "" {
+            return Ok(self
+                .children
+                .iter()
+                .map(|c| c.codegen_js(_type, cvr, rrm.clone()))
+                .collect::<CodegenResult>()?);
+        }
+
         Ok(match _type {
             CodegenType::HTML => self.html_codegen(_type, cvr, rrm)?,
             CodegenType::JSDom {
@@ -386,7 +406,10 @@ fn handle_special_attr(
         });
 
         let input_type = match input_type {
-            Some(Attribute::Static(StaticAttribute { name: _, value: Some(v) })) => v,
+            Some(Attribute::Static(StaticAttribute {
+                name: _,
+                value: Some(v),
+            })) => v,
             _ => return false,
         };
 
@@ -709,7 +732,7 @@ fn loop_codegen(
 
     let children = if reactive_list {
         Node::Element(Element {
-            name: "span".to_string(),
+            name: "".to_string(),
             id: None,
             classes: None,
             attributes: vec![],

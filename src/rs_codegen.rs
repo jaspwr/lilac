@@ -83,6 +83,7 @@ pub fn root(
                 position,
                 props,
                 file_contents,
+                children,
             } => todo!(),
         }
     }
