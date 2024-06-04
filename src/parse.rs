@@ -1,4 +1,4 @@
-use std::string::ParseError;
+use std::{iter::once, string::ParseError};
 
 use owo_colors::OwoColorize;
 
@@ -57,6 +57,11 @@ fn format_position(input: &str, position: Position) -> String {
     let mut column = 0;
 
     let mut i = position;
+        
+    if i >= input.chars().count() {
+        i = input.chars().count() - 1;
+    }
+
     while i > 0 {
         i -= 1;
         column += 1;
