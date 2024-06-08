@@ -114,7 +114,7 @@ impl Node {
 
                     format!("{{ {props_set};\n {create_fn_name}(props, {parent_elem_var_name}); }}")
                 } else {
-                    panic!();
+                    panic!("Component {} not replaced.", name);
                 }
             }
             Node::ScriptTag(st) => st.codegen(_type, cvr, rrm)?,

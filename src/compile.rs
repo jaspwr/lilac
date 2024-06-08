@@ -34,46 +34,39 @@ pub fn _fill_holes(
                     this_instance_children = children.clone();
                 }
 
-                let swap_for = if name == "Children" {
+                if name == "Children" {
                     if let Some(children) = component_instance_children {
-                        Some(Node::Element(Element {
+                        *node = Node::Element(Element {
                             name: "".to_string(),
                             id: None,
                             classes: None,
                             attributes: vec![],
                             children: children.clone(),
-                        }))
+                        });
                     } else {
                         continue;
                     }
                 } else {
-                    None
-                };
+                    let component = components_map.get(name).ok_or_else(|| {
+                        CompilerError {
+                            position: position.clone(),
+                            message: format!("Component {} not found.", name),
+                        }
+                        .format(name.as_str(), &file_contents)
+                    })?;
 
-                if let Some(swap_for) = swap_for {
-                    *node = swap_for;
-                    continue;
-                }
+                    let mut instance = component.clone();
 
-                let component = components_map.get(name).ok_or_else(|| {
-                    CompilerError {
-                        position: position.clone(),
-                        message: format!("Component {} not found.", name),
+                    instance.props = props.clone();
+
+                    if recursion_stack.contains(&name) {
+                        instance.recursive = true;
                     }
-                    .format(name.as_str(), file_contents)
-                })?;
 
-                let mut instance = component.clone();
+                    recursion_stack.push(name.clone());
 
-                instance.props = props.clone();
-
-                if recursion_stack.contains(name) {
-                    instance.recursive = true;
+                    *node = Node::Component(instance);
                 }
-
-                recursion_stack.push(name.clone());
-
-                *node = Node::Component(instance);
             }
 
             if let Node::Component(c) = node {

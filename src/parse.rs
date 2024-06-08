@@ -57,7 +57,7 @@ fn format_position(input: &str, position: Position) -> String {
     let mut column = 0;
 
     let mut i = position;
-        
+
     if i >= input.chars().count() {
         i = input.chars().count() - 1;
     }
@@ -74,10 +74,27 @@ fn format_position(input: &str, position: Position) -> String {
 }
 
 fn push_text(text: &mut String, nodes: &mut Vec<Node>) {
-    if !text.is_empty() && !text.chars().all(char::is_whitespace) {
-        nodes.push(Node::Text(text.clone()));
-        text.clear();
+    if text.is_empty() {
+        return;
     }
+
+    let new_text = text.chars().fold("".to_string(), |acc, c| {
+        if let Some(last) = acc.chars().last() {
+            if last.is_whitespace() && c.is_whitespace() {
+                return acc;
+            }
+        }
+
+        if c.is_whitespace() {
+            return acc + " ";
+        }
+
+        format!("{}{}", acc, c)
+    });
+
+    nodes.push(Node::Text(new_text));
+
+    text.clear();
 }
 
 fn parse(input: &str, start: usize, end: usize) -> Result<Vec<Node>, CompilerError> {
@@ -577,6 +594,22 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
         .into_iter()
         .filter(|a| a.name() != "id" && a.name() != "class")
         .collect();
+
+    if let Some(Node::Text(text)) = children.first_mut() {
+        if text.chars().all(char::is_whitespace) {
+            children.remove(0);
+        } else {
+            *text = text.trim_start().to_string();
+        }
+    }
+
+    if let Some(Node::Text(text)) = children.last_mut() {
+        if text.chars().all(char::is_whitespace) {
+            children.pop();
+        } else {
+            *text = text.trim_end().to_string();
+        }
+    }
 
     Ok(Node::Element(Element {
         name,
