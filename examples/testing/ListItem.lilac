@@ -1,5 +1,7 @@
 <script>
     const b = state(false);
+
+    unmount(() => console.log(`hii ${props.name}`));
 </script>
 
 <li>

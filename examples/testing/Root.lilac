@@ -6,12 +6,11 @@
     let key = 0;
 
     const add = () => {
-	if (text.value.length == 0) return;
+	if (text.get().length == 0) return;
 
-	posts.push({name: "hi", date: Date.now(), content: text.value, replies: lstate([])})
+	posts.push({name: "hi", date: Date.now(), content: text.get(), replies: lstate([])})
 
-
-	list.push([key++, text.value]);
+	list.push([key++, text.get()]);
 	text.set(() => "");
     }
 
@@ -21,9 +20,13 @@
 
 
     const posts = lstate([{name: "jasper", date: 20, content: "YAAAAAY", replies: lstate([])},
-    {name: "jasper", date: 99999, content: "UMM", replies: lstate([{name: "poop", date: 0, content: "asd", replies: lstate([])}])}
+    {name: "jasper", date: 99999, content: "UMM", replies: lstate([{name: "asd", date: 0, content: "asd", replies: lstate([])}])}
     ]);
+
+    const show_list = state(true);
 </script>
+
+Show list <input type="checkbox" bind={show_list} />
 
 <!-- hello i'm a commnet-->
 
@@ -39,9 +42,11 @@
 <button onclick={add}>Click Me!</button>
 
 <ul>
-{#for i in $lstate list}
-    <ListItem name={i[1]} delete={() => remove(i[0]) } />
-{/for}
+{#if $show_list}
+    {#for i in $lstate list}
+	<ListItem name={i[1]} delete={() => remove(i[0]) } />
+    {/for}
+{/if}
 </ul>
 
 {#for post in $lstate posts}

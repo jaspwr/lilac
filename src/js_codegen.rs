@@ -598,6 +598,8 @@ document.getElementById(\"{id}\").appendChild({text_node_var_name});
 }
 
 fn reactive_expression(expr: &JSExpression, update_fn: &JSExpression, cvr: &CVR) -> JSExpression {
+    let id = format!("re{}", ID_COUNTER.fetch_add(1, Ordering::SeqCst));
+
     let mut expr = expr.to_string();
 
     expr = cvr.process_no_declared(&expr);
@@ -642,9 +644,16 @@ fn reactive_expression(expr: &JSExpression, update_fn: &JSExpression, cvr: &CVR)
     let subscriptions = reactive_deps
         .iter()
         .map(|(dep, namespace)| {
-            let not_state_err = throw_rt_error(format!("{namespace}${dep} can only be used with a state type.").as_str());
-            format!("if (({namespace}{dep}).__STATE !== true) {not_state_err};\n ({namespace}{dep}).subscribe(() => ({update_fn})({expr}));",)
-        }).collect::<Vec<String>>()
+            let not_state_err = throw_rt_error(
+                format!("{namespace}${dep} can only be used with a state type.").as_str(),
+            );
+            format!(
+                "if (({namespace}{dep}).__STATE !== true) {not_state_err};
+                const __{id}unsub = ({namespace}{dep}).subscribe(() => ({update_fn})({expr}));
+                unmount(() => __{id}unsub());",
+            )
+        })
+        .collect::<Vec<String>>()
         .join("\n");
 
     format!(
@@ -676,11 +685,21 @@ fn conditional_elements_codegen(
 
     let func = format!(
         "const {id}cond = (c) => {{
-        {elem_var_name}.innerHTML = \"\";
-        if (c) {{
-            {children}
-        }}    
-    }};"
+            if (__conditionals_previous_result[\"{id}\"] === c) return;
+
+            __conditionals_previous_result[\"{id}\"] = c;
+
+            if (c) {{
+                unmount(() => __run_unmounts(\"{elem_var_name}\"));
+                const __outer_rendering = __currently_rendering;
+                __currently_rendering = \"{elem_var_name}\";
+                {children}
+                __currently_rendering = __outer_rendering;
+            }} else {{
+                {elem_var_name}.innerHTML = \"\";
+                __run_unmounts(\"{elem_var_name}\");
+            }}
+        }};"
     );
 
     Ok(match _type {
@@ -746,12 +765,47 @@ fn loop_codegen(
             .collect::<CodegenResult>()?
     };
 
+    let set_key = if reactive_list {
+        let list = cvr.process_no_declared(&iteratable);
+        format!("const key = ({list}).new_key(position);")
+    } else {
+        format!("const key = \"__key{id}\";")
+    };
+
+    let add_item = format!(
+        "
+        let wrapper_span = undefined;
+        {{
+            {set_key}
+
+            const {elem_var_name} = document.createElement(\"span\");
+            
+            unmount(() => __run_unmounts(key));
+            const __list_item_outer_rendering = __currently_rendering;
+            __currently_rendering = key;
+            {{
+                {children}
+            }}
+            __currently_rendering = __list_item_outer_rendering;
+
+            wrapper_span = {elem_var_name};
+        }}
+        if ({elem_var_name}.childNodes.length === 0) {{
+            {elem_var_name}.appendChild(wrapper_span);
+        }} else {{
+            {elem_var_name}.insertBefore(wrapper_span, {elem_var_name}.childNodes[position]);
+        }}"
+    );
+
     let func = format!(
         "const {id}loop = (arr) => {{
         {elem_var_name}.innerHTML = \"\";
         for (let __i = 0; __i < arr.length; __i++) {{
             const {iterator_variable} = arr[__i];
-            {children}
+            
+            position = __i;
+
+            {add_item}
         }}
     }};"
     );
@@ -764,23 +818,25 @@ fn loop_codegen(
             "
             if ({list}.__LSTATE !== true) {not_lstate_err}
 
-            {list}.subscribeAdd((value, position) => {{
+            const __list_rendered_in = __currently_rendering;
+            const unsub_add = {list}.subscribeAdd((value, position) => {{
+                const __outer_rendering = __currently_rendering;
+                __currently_rendering = __list_rendered_in;
+
                 const {iterator_variable} = value;
-                let wrapper_span = undefined;
-                {{
-                    const {elem_var_name} = document.createElement(\"span\");
-                    {children}
-                    wrapper_span = {elem_var_name};
-                }}
-                if ({elem_var_name}.childNodes.length === 0) {{
-                    {elem_var_name}.appendChild(wrapper_span);
-                }} else {{
-                    {elem_var_name}.insertBefore(wrapper_span, {elem_var_name}.childNodes[position]);
-                }}
+
+                {add_item}
+
+                __currently_rendering = __outer_rendering;
             }});
 
-            {list}.subscribeRemove((position) => {{
+            const unsub_rm = {list}.subscribeRemove((position) => {{
                 {elem_var_name}.removeChild({elem_var_name}.childNodes[position]);
+            }});
+
+            unmount(() => {{
+                unsub_add();
+                unsub_rm();
             }});
 
             {id}loop({list}.get());
