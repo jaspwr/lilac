@@ -74,11 +74,7 @@ fn format_position(input: &str, position: Position) -> String {
 }
 
 fn push_text(text: &mut String, nodes: &mut Vec<Node>) {
-    if text.is_empty() {
-        return;
-    }
-
-    let new_text = text.chars().fold("".to_string(), |acc, c| {
+    let node_text = text.chars().fold("".to_string(), |acc, c| {
         if let Some(last) = acc.chars().last() {
             if last.is_whitespace() && c.is_whitespace() {
                 return acc;
@@ -92,7 +88,9 @@ fn push_text(text: &mut String, nodes: &mut Vec<Node>) {
         format!("{}{}", acc, c)
     });
 
-    nodes.push(Node::Text(new_text));
+    if !node_text.is_empty() {
+        nodes.push(Node::Text(node_text));
+    }
 
     text.clear();
 }
@@ -128,6 +126,8 @@ fn parse(input: &str, start: usize, end: usize) -> Result<Vec<Node>, CompilerErr
             } else {
                 nodes.push(Node::ReactiveText(inner));
             }
+
+            pos -= 1;
         } else {
             text.push(c);
         }
@@ -610,6 +610,11 @@ fn parse_elem(input: &str, pos: &mut usize) -> Result<Node, CompilerError> {
             *text = text.trim_end().to_string();
         }
     }
+
+    children.retain(|n| match n {
+        Node::Text(t) => !t.is_empty(),
+        _ => true,
+    });
 
     Ok(Node::Element(Element {
         name,
