@@ -641,16 +641,21 @@ fn reactive_expression(expr: &JSExpression, update_fn: &JSExpression, cvr: &CVR)
             find_and_replace_js_identifiers(&expr, &format!("${}", dep), &format!("{}.get()", dep));
     }
 
+    let mut local_id_counter = 0;
+
     let subscriptions = reactive_deps
         .iter()
         .map(|(dep, namespace)| {
             let not_state_err = throw_rt_error(
                 format!("{namespace}${dep} can only be used with a state type.").as_str(),
             );
+
+            local_id_counter += 1;
+
             format!(
                 "if (({namespace}{dep}).__STATE !== true) {not_state_err};
-                const __{id}unsub = ({namespace}{dep}).subscribe(() => ({update_fn})({expr}));
-                unmount(() => __{id}unsub());",
+                const __{id}_{local_id_counter}_unsub = ({namespace}{dep}).subscribe(() => ({update_fn})({expr}));
+                unmount(() => __{id}_{local_id_counter}_unsub());",
             )
         })
         .collect::<Vec<String>>()
@@ -812,16 +817,20 @@ fn loop_codegen(
 
     let not_lstate_err = throw_rt_error("$lstate can only be used with an lstate type.");
 
+    let temp_currently_rendering_var_name = format!("__list_rendered_in_{}", ID_COUNTER.fetch_add(1, Ordering::SeqCst));
+    let unsub_add_var_name = format!("__unsub_add_{}", ID_COUNTER.fetch_add(1, Ordering::SeqCst));
+    let unsub_rm_var_name = format!("__unsub_rm_{}", ID_COUNTER.fetch_add(1, Ordering::SeqCst));
+
     let instantiate_and_subscribe = if reactive_list {
         let list = cvr.process_no_declared(&iteratable);
         format!(
             "
             if ({list}.__LSTATE !== true) {not_lstate_err}
 
-            const __list_rendered_in = __currently_rendering;
-            const unsub_add = {list}.subscribeAdd((value, position) => {{
+            const {temp_currently_rendering_var_name} = __currently_rendering;
+            const {unsub_add_var_name} = {list}.subscribeAdd((value, position) => {{
                 const __outer_rendering = __currently_rendering;
-                __currently_rendering = __list_rendered_in;
+                __currently_rendering = {temp_currently_rendering_var_name};
 
                 const {iterator_variable} = value;
 
@@ -830,13 +839,13 @@ fn loop_codegen(
                 __currently_rendering = __outer_rendering;
             }});
 
-            const unsub_rm = {list}.subscribeRemove((position) => {{
+            const {unsub_rm_var_name} = {list}.subscribeRemove((position) => {{
                 {elem_var_name}.removeChild({elem_var_name}.childNodes[position]);
             }});
 
             unmount(() => {{
-                unsub_add();
-                unsub_rm();
+                {unsub_add_var_name}();
+                {unsub_rm_var_name}();
             }});
 
             {id}loop({list}.get());
